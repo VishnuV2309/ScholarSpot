@@ -1,4 +1,4 @@
-#🎓 ScholarSpot
+# 🎓 ScholarSpot
 
 A modern, cloud-based platform designed to connect **students, professors, and administrators** — enabling seamless collaboration, resource sharing, and communication within academic institutions.
 
