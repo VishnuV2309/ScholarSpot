@@ -1,9 +1,8 @@
-# 🎓 ScholarSpot
+#🎓 ScholarSpot
 
 A modern, cloud-based platform designed to connect **students, professors, and administrators** — enabling seamless collaboration, resource sharing, and communication within academic institutions.
 
 🌐 **Live Demo:** [https://ssprototype.web.app/](https://ssprototype.web.app/)
-
 💻 **GitHub Repository:** [https://github.com/VishnuV2309/ScholarSpot](https://github.com/VishnuV2309/ScholarSpot)
 
 ---
@@ -13,26 +12,25 @@ A modern, cloud-based platform designed to connect **students, professors, and a
 **ScholarSpot** is a dynamic academic management and collaboration platform that integrates communication, course material sharing, and administration in one digital ecosystem.
 It simplifies academic workflows, strengthens student-teacher connections, and promotes a smart learning environment.
 
+Currently, the platform hosts resources for **1st and 2nd semesters of REVA University**, including materials, announcements, and chat functionality.
+
+⚠️ **Important Notice:**
+The live demo will remain functional **only for a few days** due to **Uploadcare database and storage charges**.
+After this period, file uploads and certain dynamic features may stop working.
+However, users can still **visit and explore the live website** to experience the interface and features.
+
 ---
 
 ## 🧩 Features
 
 ✅ **Multi-role Access** – Separate dashboards for Student, Professor, and Admin
-
 ✅ **Secure Authentication** – Powered by Firebase Authentication
-
 ✅ **Realtime Chat System** – Instant communication between users
-
-✅ **Upload & Share** – Seamless file management with Uploadcare integration
-
+✅ **Upload & Share** – File management powered by **Uploadcare**
 ✅ **Firestore Integration** – Real-time database for user data and content
-
 ✅ **Announcements & Resources** – Professors can post and manage materials
-
 ✅ **Admin Panel** – Manage users, permissions, and monitor platform usage
-
 ✅ **Single Page Application (SPA)** – Smooth and dynamic navigation
-
 ✅ **Fully Responsive** – Works across all devices
 
 ---
@@ -40,7 +38,6 @@ It simplifies academic workflows, strengthens student-teacher connections, and p
 ## 🖥️ Live Demo
 
 🎯 **Production Site:** [https://ssprototype.web.app/](https://ssprototype.web.app/)
-
 💻 **GitHub Repository:** [https://github.com/VishnuV2309/ScholarSpot](https://github.com/VishnuV2309/ScholarSpot)
 
 ---
@@ -184,7 +181,8 @@ Hosting → Firebase Hosting / Vercel Deployment
 
 * Keep all private Firebase API keys hidden (never commit to GitHub).
 * Store secrets in Firebase or Vercel environment settings.
-* Enforce Firestore security rules for all user roles.
+* Enforce Firestore and Uploadcare security rules for all user roles.
+* Uploadcare storage usage is limited — exceeding the free tier may cause upload restrictions.
 
 ---
 
@@ -195,6 +193,13 @@ Hosting → Firebase Hosting / Vercel Deployment
 * Google Classroom & Drive integration
 * Admin analytics dashboard
 * Peer-to-peer discussion and study rooms
+
+---
+
+## 🏷️ License
+
+This project is licensed under the **MIT License** — free for use, modification, and distribution with proper credit.
+
 ---
 
 ## 📞 Contact
