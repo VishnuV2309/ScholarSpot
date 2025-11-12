@@ -11,6 +11,7 @@ A modern, cloud-based platform designed to connect **students, professors, and a
 ## 👥 Team Details
 
 **Team Name:** Mind_Mesh
+
 **Institution:** REVA University, Bangalore
 
 | Role      | Name          | Email                                                               |
