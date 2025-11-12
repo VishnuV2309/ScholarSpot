@@ -39,13 +39,21 @@ However, users can still **visit and explore the live website** to experience th
 ## 🧩 Features
 
 ✅ **Multi-role Access** – Separate dashboards for Student, Professor, and Admin
+
 ✅ **Secure Authentication** – Powered by Firebase Authentication
+
 ✅ **Realtime Chat System** – Instant communication between users
+
 ✅ **Upload & Share** – File management powered by **Uploadcare**
+
 ✅ **Firestore Integration** – Real-time database for user data and content
+
 ✅ **Announcements & Resources** – Professors can post and manage materials
+
 ✅ **Admin Panel** – Manage users, permissions, and monitor platform usage
+
 ✅ **Single Page Application (SPA)** – Smooth and dynamic navigation
+
 ✅ **Fully Responsive** – Works across all devices
 
 ---
