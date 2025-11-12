@@ -32,6 +32,7 @@ It simplifies academic workflows, strengthens student-teacher connections, and p
 ## 🖥️ Live Demo
 
 🎯 **Production Site:** [https://ssprototype.web.app/](https://ssprototype.web.app/)
+
 💻 **GitHub Repository:** [https://github.com/VishnuV2309/ScholarSpot](https://github.com/VishnuV2309/ScholarSpot)
 
 ---
@@ -124,7 +125,7 @@ Hosting → Firebase Hosting / Vercel Deployment
 4. **Deploy from project root:**
 
    ```powershell
-   cd "c:\Users\VISHNU V\Downloads\Study-Adda-main (1)\Study-Adda-main"
+   cd "c:\Users\VISHNU V\Downloads\ScholarSpot"
    vercel --prod
    ```
 
@@ -160,7 +161,7 @@ Hosting → Firebase Hosting / Vercel Deployment
 4. **Deploy hosting:**
 
    ```powershell
-   cd "c:\Users\VISHNU V\Downloads\Study-Adda-main (1)\Study-Adda-main"
+   cd "c:\Users\VISHNU V\Downloads\ScholarSpot"
    firebase deploy --only hosting
    ```
 
@@ -186,15 +187,13 @@ Hosting → Firebase Hosting / Vercel Deployment
 * Google Classroom & Drive integration
 * Admin analytics dashboard
 * Peer-to-peer discussion and study rooms
-
 ---
-
 
 ## 📞 Contact
 
 For queries or collaboration, reach out:
 
-* **Vishnu V** — [vishnuv2309@gmail.com](mailto:vishnuv2309@email.com)
+* **Vishnu V** — [vishnuv2309@gmail.com](mailto:vishnuv2309@gmail.com)
 * **Amrutha D** — [amruthadandigimath@gmail.com](mailto:amruthadandigimath@gmail.com)
 
 ---
