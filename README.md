@@ -8,6 +8,28 @@ A modern, cloud-based platform designed to connect **students, professors, and a
 
 ---
 
+## 👥 Team Details
+
+**Team Name:** Mind_Mesh
+**Institution:** REVA University, Bangalore
+
+| Role      | Name          | Email                                                               |
+| --------- | ------------- | ------------------------------------------------------------------- |
+| Developer | **Vishnu V**  | [vishnuv2309@gmail.com](mailto:vishnuv2309@gmail.com)               |
+| Developer | **Amrutha D** | [amruthadandigimath@gmail.com](mailto:amruthadandigimath@gmail.com) |
+
+---## 👥 Team Details
+
+**Team Name:** Mind_Mesh
+**Institution:** REVA University, Bangalore
+
+| Role      | Name          | Email                                                               |
+| --------- | ------------- | ------------------------------------------------------------------- |
+| Developer | **Vishnu V**  | [vishnuv2309@gmail.com](mailto:vishnuv2309@gmail.com)               |
+| Developer | **Amrutha D** | [amruthadandigimath@gmail.com](mailto:amruthadandigimath@gmail.com) |
+
+---
+
 ## 🚀 Overview
 
 **ScholarSpot** is a dynamic academic management and collaboration platform that integrates communication, course material sharing, and administration in one digital ecosystem.
@@ -44,17 +66,7 @@ However, users can still **visit and explore the live website** to experience th
 
 ---
 
-## 👥 Team Details
 
-**Team Name:** Mind_Mesh
-**Institution:** REVA University, Bangalore
-
-| Role      | Name          | Email                                                               |
-| --------- | ------------- | ------------------------------------------------------------------- |
-| Developer | **Vishnu V**  | [vishnuv2309@gmail.com](mailto:vishnuv2309@gmail.com)               |
-| Developer | **Amrutha D** | [amruthadandigimath@gmail.com](mailto:amruthadandigimath@gmail.com) |
-
----
 
 ## 🔑 Demo Login Credentials
 
