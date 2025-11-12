@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anonymous Chat Room </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <!-- Uploadcare Widget Script -->
+    <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js" charset="utf-8"></script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .loader { border: 5px solid rgba(255,255,255,0.3); border-top: 5px solid #fff; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #chat-messages { scroll-behavior: smooth; }
+        .chat-bubble { animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop-in {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        /* Hide the default Uploadcare button */
+        .uploadcare--widget { display: none; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-600 to-blue-500">
+
+    <!-- Loading Spinner -->
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex flex-col items-center justify-center z-50">
+        <div class="loader"></div>
+        <p class="mt-4 text-white">Connecting to chat...</p>
+    </div>
+
+    <!-- Main Chat Layout -->
+    <div id="chat-layout" class="hidden h-screen w-screen flex flex-col p-4">
+        <!-- Header -->
+        <header class="flex-shrink-0 flex items-center justify-between pb-4">
+            <a href="dashboard.html" class="flex items-center text-white opacity-80 hover:opacity-100 transition">
+                <i data-feather="chevron-left" class="mr-2"></i>
+                Back to Dashboard
+            </a>
+            <h1 class="text-2xl font-bold text-white">Anonymous Chat</h1>
+        </header>
+
+        <!-- Chat Area -->
+        <div class="bg-white/30 backdrop-blur-xl rounded-2xl flex-1 flex flex-col shadow-lg">
+            <div id="chat-messages" class="flex-1 p-6 space-y-4 overflow-y-auto">
+                <!-- Messages will be rendered here -->
+            </div>
+            <form id="chat-form" class="p-4 border-t border-white/20 flex items-center">
+                <!-- Hidden input for Uploadcare widget -->
+                <input type="hidden" role="uploadcare-uploader" id="file-uploader" />
+                <button type="button" id="attach-file-button" class="mr-3 flex-shrink-0 inline-flex items-center justify-center rounded-full h-12 w-12 bg-white/20 text-white hover:bg-white/40 transition">
+                    <i data-feather="paperclip" class="h-6 w-6"></i>
+                </button>
+                <input id="chat-input" type="text" placeholder="Type a message..." autocomplete="off" class="flex-1 block w-full rounded-full border-transparent bg-white/20 text-white placeholder-gray-200 focus:ring-2 focus:ring-white">
+                <button type="submit" class="ml-3 flex-shrink-0 inline-flex items-center justify-center rounded-full h-12 w-12 bg-white text-purple-600 hover:bg-gray-200 transition shadow-md">
+                    <i data-feather="send" class="h-6 w-6"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase SDK and Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB9tfTneE9g87gI2N_ZUyFj5JqnbGnaW_E",
+            authDomain: "scholarspot99.firebaseapp.com",
+            projectId: "scholarspot99",
+            storageBucket: "scholarspot99.firebasestorage.app",
+            messagingSenderId: "850241158094",
+            appId: "1:850241158094:web:f35083a69458ea8021c99f",
+            measurementId: "G-X8M1BHJDQE"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const chatLayout = document.getElementById('chat-layout');
+        const chatMessagesDiv = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const attachFileButton = document.getElementById('attach-file-button');
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loadingOverlay.classList.add('hidden');
+                chatLayout.classList.remove('hidden');
+                feather.replace();
+                initializeChat(user.uid);
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        function initializeChat(currentUserId) {
+            const q = query(collection(db, "chat"), orderBy("timestamp", "asc"));
+            onSnapshot(q, (querySnapshot) => {
+                chatMessagesDiv.innerHTML = '';
+                querySnapshot.forEach((doc) => {
+                    renderMessage(doc.data(), currentUserId);
+                });
+                chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+            });
+
+            chatForm.addEventListener('submit', (e) => handleSendMessage(e, currentUserId));
+            initializeUploadcareWidget(currentUserId);
+        }
+
+        function renderMessage(msg, currentUserId) {
+            const messageElement = document.createElement('div');
+            const isCurrentUser = msg.uid === currentUserId;
+            let messageContent = '';
+
+            // Determine content type and create appropriate HTML
+            if (msg.type === 'image') {
+                messageContent = `<img src="${msg.fileURL}" alt="User uploaded image" class="rounded-lg max-w-full h-auto cursor-pointer" onclick="window.open('${msg.fileURL}', '_blank')">`;
+            } else if (msg.type === 'pdf') {
+                messageContent = `<a href="${msg.fileURL}" target="_blank" class="flex items-center p-3 bg-white/20 rounded-lg hover:bg-white/30 transition">
+                                    <i data-feather="file-text" class="mr-3 flex-shrink-0"></i>
+                                    <span class="truncate font-medium">${msg.fileName}</span>
+                                  </a>`;
+            } else { // Default to text
+                messageContent = `<p>${msg.text}</p>`;
+            }
+            
+            messageElement.className = `flex items-end gap-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`;
+            messageElement.innerHTML = `
+                <div class="chat-bubble max-w-xs lg:max-w-md p-1 rounded-2xl ${isCurrentUser ? 'bg-white text-purple-700 rounded-br-none' : 'bg-purple-500 text-white rounded-bl-none'}">
+                    <div class="${msg.type === 'text' ? 'px-3 py-2' : ''}">${messageContent}</div>
+                </div>
+            `;
+            chatMessagesDiv.appendChild(messageElement);
+            feather.replace();
+        }
+
+        async function handleSendMessage(e, currentUserId) {
+            e.preventDefault();
+            const messageText = chatInput.value.trim();
+            if (messageText) {
+                try {
+                    await addDoc(collection(db, "chat"), {
+                        text: messageText,
+                        type: 'text',
+                        uid: currentUserId,
+                        timestamp: serverTimestamp()
+                    });
+                    chatInput.value = '';
+                } catch (error) {
+                    console.error("Error sending message:", error);
+                    alert("Could not send message.");
+                }
+            }
+        }
+
+        function initializeUploadcareWidget(currentUserId) {
+            const UPLOADCARE_PUBLIC_KEY = "a7207f99523ca79a93d9"; // Uploadcare public key provided by user
+            const widget = uploadcare.Widget('#file-uploader', {
+                publicKey: UPLOADCARE_PUBLIC_KEY,
+                imagesOnly: false, // Allow any file type initially
+                validators: [
+                    (fileInfo) => {
+                        if (fileInfo.mimeType !== 'application/pdf' && !fileInfo.mimeType.startsWith('image/')) {
+                            throw new Error("Only images and PDFs are allowed.");
+                        }
+                    }
+                ]
+            });
+
+            attachFileButton.addEventListener('click', () => {
+                widget.openDialog();
+            });
+
+            widget.onUploadComplete(async (fileInfo) => {
+                const isImage = fileInfo.mimeType.startsWith('image/');
+                try {
+                    await addDoc(collection(db, "chat"), {
+                        type: isImage ? 'image' : 'pdf',
+                        fileURL: fileInfo.cdnUrl,
+                        fileName: fileInfo.name,
+                        uid: currentUserId,
+                        timestamp: serverTimestamp()
+                    });
+                } catch (error) {
+                    console.error("Error sending file message:", error);
+                    alert("Could not send file.");
+                }
+            });
+        }
+    </script>
+</body>
+</html>

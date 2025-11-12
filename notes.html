@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes - ScholarSpot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: linear-gradient(135deg, #6b7280, #3b82f6, #10b981); 
+        }
+        .loader { 
+            border: 6px solid #e5e7eb; 
+            border-top: 6px solid #8b5cf6; 
+            border-radius: 50%; 
+            width: 60px; 
+            height: 60px; 
+            animation: spin 0.8s linear infinite; 
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        .tab-button { 
+            transition: all 0.3s ease; 
+            border-radius: 8px; 
+        }
+        .tab-button.active { 
+            background: linear-gradient(to right, #8b5cf6, #ec4899); 
+            color: white; 
+            border-color: transparent; 
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); 
+        }
+        .tab-button:hover { 
+            background: linear-gradient(to right, #a78bfa, #f472b6); 
+            color: white; 
+        }
+        .card { 
+            background: linear-gradient(145deg, #ffffff, #e0e7ff); 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            transition: transform 0.3s ease, box-shadow 0.3s ease; 
+        }
+        .card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); 
+        }
+        .btn-primary { 
+            background: linear-gradient(to right, #8b5cf6, #ec4899); 
+            transition: transform 0.2s ease, box-shadow 0.2s ease; 
+        }
+        .btn-primary:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); 
+        }
+        .folder-icon { 
+            transition: transform 0.3s ease; 
+        }
+        .folder-icon:hover { 
+            transform: scale(1.1); 
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Content -->
+    <div id="main-content" class="hidden">
+        <!-- Header -->
+        <header class="bg-white/90 backdrop-blur-xl shadow-lg sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto py-5 px-6 lg:px-8 flex justify-between items-center">
+                <h1 class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-500">Course Notes</h1>
+                <a href="dashboard.html" class="btn-primary inline-flex items-center px-5 py-2.5 rounded-lg text-white font-semibold text-sm">
+                    <i data-feather="arrow-left" class="mr-2 h-5 w-5"></i> Back to Dashboard
+                </a>
+            </div>
+        </header>
+        <!-- Main Area -->
+        <main class="max-w-7xl mx-auto py-8 px-6 lg:px-8 w-full">
+            <div id="content-container">
+                <div class="loader mx-auto"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Firebase SDK and Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB9tfTneE9g87gI2N_ZUyFj5JqnbGnaW_E",
+            authDomain: "scholarspot99.firebaseapp.com",
+            projectId: "scholarspot99",
+            storageBucket: "scholarspot99.firebasestorage.app",
+            messagingSenderId: "850241158094",
+            appId: "1:850241158094:web:f35083a69458ea8021c99f",
+            measurementId: "G-X8M1BHJDQE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const mainContent = document.getElementById('main-content');
+        const contentContainer = document.getElementById('content-container');
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists()) {
+                    mainContent.classList.remove('hidden');
+                    feather.replace();
+                    loadContent(userDocSnap.data());
+                } else { window.location.href = 'index.html'; }
+            } else { window.location.href = 'index.html'; }
+        });
+
+        function loadContent(userData) {
+            const CONTENT_TYPE = "Notes";
+            // For semester 1 and 2, content should be visible across all branches
+            let q;
+            // Only fetch approved content
+            // Query all matching content, then filter out documents explicitly marked as rejected (approved === false)
+            if (userData.semester === '1' || userData.semester === 1 || userData.semester === '2' || userData.semester === 2) {
+                q = query(collection(db, "content"), where("semester", "==", userData.semester), where("contentType", "==", CONTENT_TYPE));
+            } else {
+                q = query(collection(db, "content"), where("branch", "==", userData.branch), where("semester", "==", userData.semester), where("contentType", "==", CONTENT_TYPE));
+            }
+
+            onSnapshot(q, (snapshot) => {
+                if (snapshot.empty) {
+                    contentContainer.innerHTML = `<div class="text-center py-12"><p class="text-gray-200 text-lg font-medium">No notes found for your course yet.</p></div>`;
+                    return;
+                }
+                
+                // Treat missing `approved` as published. Only exclude documents where approved === false.
+                const allContent = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(d => d.approved !== false);
+                const subjects = [...new Set(allContent.map(item => item.subjectName))].sort();
+
+                let tabsHTML = '<div class="border-b border-gray-200 bg-white/90 backdrop-blur-md rounded-t-xl p-3"><nav class="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">';
+                subjects.forEach((sub, index) => {
+                    tabsHTML += `<button data-subject="${sub}" class="tab-button whitespace-nowrap py-3 px-5 font-semibold text-sm ${index === 0 ? 'active' : 'text-gray-600 hover:text-gray-800'}">${sub}</button>`;
+                });
+                tabsHTML += '</nav></div>';
+
+                let panelsHTML = '<div class="mt-2">';
+                subjects.forEach((sub, index) => {
+                    const filesForSubject = allContent.filter(item => item.subjectName === sub);
+                    panelsHTML += `<div id="panel-${sub.replace(/\s+/g, '-')}" class="card space-y-4 p-6 rounded-xl ${index === 0 ? '' : 'hidden'}">`;
+                    panelsHTML += `<div class="flex items-center"><i data-feather="folder" class="folder-icon w-8 h-8 text-purple-600 mr-3"></i><h2 class="text-2xl font-bold text-gray-900">${sub}</h2></div>`;
+                    filesForSubject.forEach(file => {
+                                                panelsHTML += `<div class="block p-5 card rounded-lg border border-gray-100 hover:bg-indigo-50 transition-all duration-300">
+                                                                                <div class="flex justify-between items-center">
+                                                                                        <div><p class="font-semibold text-indigo-700 text-lg">${file.fileName}</p><p class="text-sm text-gray-500">Uploaded by ${file.uploaderName}${file.uploaderRole ? ' ('+file.uploaderRole+')' : ''}</p></div>
+                                                                                        <div class="flex items-center gap-2">
+                                                                                            <a href="viewer.html?note=${encodeURIComponent(file.fileURL)}" target="_blank" class="inline-flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md text-sm"><i data-feather="eye" class="w-4 h-4 mr-2"></i>View</a>
+                                                                                            <a href="${file.fileURL}" class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-md text-sm" download target="_blank"><i data-feather="download" class="w-4 h-4 mr-2"></i>Download</a>
+                                                                                        </div>
+                                                                                </div>
+                                                                            </div>`;
+                    });
+                    panelsHTML += `</div>`;
+                });
+                panelsHTML += '</div>';
+
+                contentContainer.innerHTML = tabsHTML + panelsHTML;
+                feather.replace();
+
+                document.querySelectorAll('.tab-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const subject = e.currentTarget.dataset.subject;
+                        document.querySelectorAll('.tab-button').forEach(btn => {
+                            btn.classList.remove('active');
+                            btn.classList.add('text-gray-600');
+                        });
+                        e.currentTarget.classList.add('active');
+                        document.querySelectorAll('[id^="panel-"]').forEach(panel => panel.classList.add('hidden'));
+                        document.getElementById(`panel-${subject.replace(/\s+/g, '-')}`).classList.remove('hidden');
+                    });
+                });
+            });
+        }
+    </script>
+</body>
+</html>

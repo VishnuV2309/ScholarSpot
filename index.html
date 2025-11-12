@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScholarSpot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preload" href="https://unpkg.com/feather-icons" as="script">
+    <script defer src="https://unpkg.com/feather-icons"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1e3a8a, #6d28d9, #14b8a6); /* Navy, amethyst, teal */
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .loader {
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #7c3aed; /* Amethyst */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #auth-container {
+            background: linear-gradient(145deg, #ffffff, #e0e7ff);
+            border: 2px solid transparent;
+            border-image: linear-gradient(to right, #7c3aed, #db2777) 1;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
+        }
+        #auth-container:hover {
+            transform: translateY(-5px);
+        }
+        input, select {
+            background: linear-gradient(145deg, #f8fafc, #e8f5e8);
+            border: 1px solid #d1d5db;
+            transition: all 0.3s ease;
+        }
+        input:focus, select:focus {
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+        }
+        .btn-primary {
+            background: linear-gradient(to right, #7c3aed, #db2777); /* Amethyst to magenta */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            will-change: transform;
+        }
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .btn-google {
+            background: linear-gradient(to right, #1d4ed8, #3b82f6); /* Sapphire to sky blue */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            will-change: transform;
+        }
+        .btn-google:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        #role-modal {
+            transition: opacity 0.3s ease-in-out;
+        }
+        #role-modal > div {
+            transition: transform 0.3s ease-in-out;
+            background: linear-gradient(145deg, #ffffff, #e0e7ff);
+            border-top: 4px solid transparent;
+            border-image: linear-gradient(to right, #7c3aed, #db2777) 1;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .role-select-button {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .role-select-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        @media (max-width: 640px) {
+            #auth-container {
+                margin: 16px;
+                padding: 24px;
+            }
+            .btn-primary, .btn-google {
+                padding: 12px;
+                font-size: 0.875rem;
+            }
+            input, select {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="auth-container" class="w-full max-w-md p-10 space-y-8 rounded-2xl m-4">
+        <div class="text-center">
+            <h1 class="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-[#7c3aed] to-[#db2777]">
+                Scholar<span class="text-teal-400">Spot</span>
+            </h1>
+            <p id="form-title" class="mt-3 text-sm text-gray-600">Welcome! Please sign in to your account.</p>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form" class="mt-8 space-y-6">
+            <div class="space-y-4">
+                <input id="login-identity" type="text" required class="appearance-none block w-full px-4 py-3 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none sm:text-sm" placeholder="Email Address">
+                <input id="login-password" type="password" autocomplete="current-password" required class="appearance-none block w-full px-4 py-3 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none sm:text-sm" placeholder="Password">
+            </div>
+            <div class="space-y-3">
+                <button id="login-button" type="submit" class="btn-primary group relative w-full flex justify-center items-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white">
+                    <span class="button-text">Sign in</span>
+                    <div class="loader hidden ml-3"></div>
+                </button>
+                <button id="google-signin-button" type="button" class="btn-google group relative w-full flex justify-center items-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white">
+                    <i data-feather="globe" class="mr-2 h-5 w-5"></i>
+                    <span class="button-text">Sign in with Google</span>
+                    <div class="loader hidden ml-3"></div>
+                </button>
+            </div>
+        </form>
+
+        <!-- Registration Form (Initially Hidden) -->
+        <form id="register-form" class="hidden mt-8 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input id="first-name" type="text" required class="appearance-none block w-full px-4 py-3 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none sm:text-sm" placeholder="First Name">
+                <input id="last-name" type="text" required class="appearance-none block w-full px-4 py-3 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none sm:text-sm" placeholder="Last Name">
+            </div>
+            <input id="register-mobile" type="tel" required class="appearance-none block w-full px-4 py-3 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none sm:text-sm" placeholder="Mobile Number">
+            <input id="register-email" type="email" autocomplete="email" required class="appearance-none block w-full px-4 py-3 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none sm:text-sm" placeholder="Email address">
+            <!-- Student-specific fields -->
+            <div id="student-fields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                <select id="branch" name="branch" class="appearance-none block w-full px-4 py-3 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none sm:text-sm">
+                    <option value="" disabled selected>Select Branch</option>
+                    <option value="CSE">CSE</option>
+                    <option value="CSE(AI&DS)">CSE(AI&DS)</option>
+                    <option value="CSE(IOT)">CSE(IOT)</option>
+                </select>
+                <select id="semester" name="semester" class="appearance-none block w-full px-4 py-3 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none sm:text-sm">
+                    <option value="" disabled selected>Select Semester</option>
+                    <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                    <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+                </select>
+            </div>
+            <input id="register-password" type="password" autocomplete="new-password" required class="appearance-none block w-full px-4 py-3 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none sm:text-sm" placeholder="Password">
+            <button id="register-button" type="submit" class="btn-primary group relative w-full flex justify-center items-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white">
+                <span class="button-text">Create Account</span>
+                <div class="loader hidden ml-3"></div>
+            </button>
+        </form>
+
+        <!-- Toggle between Login and Register -->
+        <div class="text-sm text-center">
+            <p id="toggle-text">Don't have an account? <a href="#" id="toggle-link" class="font-medium text-teal-400 hover:text-teal-300">Sign up</a></p>
+        </div>
+
+        <div id="message-box" class="hidden p-4 rounded-md text-sm"></div>
+    </div>
+
+    <!-- Role Selection Modal -->
+    <div id="role-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50">
+        <div class="relative p-8 w-full max-w-sm transform translate-y-10">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#7c3aed] to-[#db2777] mb-6">Join as a...</h3>
+                <div class="flex flex-col space-y-4">
+                    <button data-role="student" class="role-select-button w-full px-4 py-3 bg-gradient-to-r from-[#7c3aed] to-[#db2777] text-white text-base font-medium rounded-md shadow-sm">Student</button>
+                    <button data-role="professor" class="role-select-button w-full px-4 py-3 bg-gradient-to-r from-[#1d4ed8] to-[#3b82f6] text-white text-base font-medium rounded-md shadow-sm">Professor</button>
+                </div>
+                <button id="modal-cancel-button" class="mt-6 text-sm text-gray-300 hover:text-gray-100">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB9tfTneE9g87gI2N_ZUyFj5JqnbGnaW_E",
+            authDomain: "scholarspot99.firebaseapp.com",
+            projectId: "scholarspot99",
+            storageBucket: "scholarspot99.firebasestorage.app",
+            messagingSenderId: "850241158094",
+            appId: "1:850241158094:web:f35083a69458ea8021c99f",
+            measurementId: "G-X8M1BHJDQE"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        const authContainer = document.getElementById('auth-container');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const toggleLink = document.getElementById('toggle-link');
+        const messageBox = document.getElementById('message-box');
+        const studentFields = document.getElementById('student-fields');
+        const roleModal = document.getElementById('role-modal');
+        const modalCancelButton = document.getElementById('modal-cancel-button');
+        const roleSelectButtons = document.querySelectorAll('.role-select-button');
+        const googleSignInButton = document.getElementById('google-signin-button');
+
+    let selectedRole = 'student'; // Default role
+    // When a user signs in via Google and we still need additional profile info
+    // we hold the Firebase user object here until the user completes registration.
+    let googlePendingUser = null;
+
+        function toggleButtonLoading(button, isLoading) {
+            const buttonText = button.querySelector('.button-text');
+            const loader = button.querySelector('.loader');
+            if (isLoading) {
+                button.disabled = true;
+                buttonText.classList.add('hidden');
+                loader.classList.remove('hidden');
+            } else {
+                button.disabled = false;
+                buttonText.classList.remove('hidden');
+                loader.classList.add('hidden');
+            }
+        }
+
+        function showRoleModal() {
+            roleModal.classList.remove('hidden');
+            setTimeout(() => {
+                roleModal.querySelector('div').style.transform = 'translateY(0)';
+            }, 10);
+        }
+
+        function hideRoleModal() {
+            roleModal.querySelector('div').style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                roleModal.classList.add('hidden');
+            }, 300);
+        }
+
+        function showLoginView() {
+            registerForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            document.getElementById('form-title').textContent = 'Welcome! Please sign in to your account.';
+            document.getElementById('toggle-text').innerHTML = `Don't have an account? <a href="#" id="toggle-link" class="font-medium text-teal-400 hover:text-teal-300">Sign up</a>`;
+            document.getElementById('toggle-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                showRoleModal();
+            });
+
+            // If the user returns to the login view while a Google sign-in is
+            // pending, clear it and sign out to avoid leaving an authenticated
+            // but incomplete state.
+            if (googlePendingUser) {
+                auth.signOut().catch(() => {});
+                googlePendingUser = null;
+            }
+        }
+
+        function startRegistration(role) {
+            selectedRole = role;
+            hideRoleModal();
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+            authContainer.classList.remove('hidden');
+            document.getElementById('form-title').textContent = `Create a new ${role} account.`;
+            document.getElementById('toggle-text').innerHTML = `Already have an account? <a href="#" id="toggle-link" class="font-medium text-teal-400 hover:text-teal-300">Sign in</a>`;
+            document.getElementById('toggle-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                showLoginView();
+            });
+
+            if (role === 'student') {
+                studentFields.style.display = 'grid';
+                document.getElementById('branch').required = true;
+                document.getElementById('semester').required = true;
+            } else {
+                studentFields.style.display = 'none';
+                document.getElementById('branch').required = false;
+                document.getElementById('semester').required = false;
+            }
+            // If this registration was started after Google sign-in, prefill and
+            // adjust the form: Google users don't need to set a password here
+            // because authentication is already handled by Firebase.
+            const pwdField = document.getElementById('register-password');
+            const registerButton = document.getElementById('register-button');
+            if (googlePendingUser) {
+                // Prefill email if available
+                document.getElementById('register-email').value = googlePendingUser.email || document.getElementById('register-email').value;
+                // Hide/disable password requirement
+                pwdField.required = false;
+                pwdField.placeholder = '(Password not required for Google sign-in)';
+                pwdField.style.opacity = '0.7';
+                registerButton.querySelector('.button-text').textContent = 'Complete Sign-Up';
+            } else {
+                pwdField.required = true;
+                pwdField.placeholder = 'Password';
+                pwdField.style.opacity = '1';
+                registerButton.querySelector('.button-text').textContent = 'Create Account';
+            }
+        }
+
+        function showMessage(message, type = 'error') {
+            messageBox.textContent = message;
+            messageBox.className = `p-4 rounded-md text-sm ${type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => messageBox.classList.add('hidden'), 5000);
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const button = document.getElementById('login-button');
+            toggleButtonLoading(button, true);
+            const email = document.getElementById('login-identity').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                showMessage("Login successful! Redirecting...", "success");
+                setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+            } catch (error) {
+                showMessage(error.message, "error");
+            } finally {
+                toggleButtonLoading(button, false);
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const button = document.getElementById('register-button');
+            toggleButtonLoading(button, true);
+            // Collect form data
+            const userData = {
+                firstName: document.getElementById('first-name').value,
+                lastName: document.getElementById('last-name').value,
+                mobile: document.getElementById('register-mobile').value,
+                email: document.getElementById('register-email').value,
+                role: selectedRole,
+                createdAt: new Date()
+            };
+
+            if (selectedRole === 'student') {
+                userData.branch = document.getElementById('branch').value;
+                userData.semester = document.getElementById('semester').value;
+            }
+
+            try {
+                if (googlePendingUser) {
+                    // For Google users, the Firebase Auth user already exists.
+                    // Use their UID to create the Firestore profile document.
+                    const user = googlePendingUser;
+                    await setDoc(doc(db, "users", user.uid), userData);
+                    googlePendingUser = null;
+                    showMessage("Account setup complete! Redirecting...", "success");
+                    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+                } else {
+                    // Normal email/password registration
+                    const password = document.getElementById('register-password').value;
+                    const userCredential = await createUserWithEmailAndPassword(auth, userData.email, password);
+                    const user = userCredential.user;
+                    await setDoc(doc(db, "users", user.uid), userData);
+                    showMessage("Registration successful! Please sign in.", "success");
+                    showLoginView();
+                }
+            } catch (error) {
+                showMessage(error.message, "error");
+            } finally {
+                toggleButtonLoading(button, false);
+            }
+        }
+
+        async function handleGoogleSignIn() {
+            toggleButtonLoading(googleSignInButton, true);
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (!userDocSnap.exists()) {
+                    // New user: store pending user and show role modal so the user can
+                    // choose their role and complete any student-specific fields.
+                    googlePendingUser = user;
+
+                    // Prefill registration inputs from Google profile where possible
+                    const names = user.displayName ? user.displayName.split(' ') : [];
+                    document.getElementById('first-name').value = names[0] || '';
+                    document.getElementById('last-name').value = names.slice(1).join(' ') || '';
+                    document.getElementById('register-email').value = user.email || '';
+                    // Show registration view and role modal to choose role
+                    showRoleModal();
+                } else {
+                    showMessage("Google sign-in successful! Redirecting...", "success");
+                    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+                }
+            } catch (error) {
+                showMessage(error.message, "error");
+            } finally {
+                toggleButtonLoading(googleSignInButton, false);
+            }
+        }
+
+        // Event Listeners
+        loginForm.addEventListener('submit', handleLogin);
+        registerForm.addEventListener('submit', handleRegister);
+        googleSignInButton.addEventListener('click', handleGoogleSignIn);
+        toggleLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showRoleModal();
+        });
+        modalCancelButton.addEventListener('click', () => {
+            // If a Google sign-in is pending and the user cancels, sign them out
+            // to avoid leaving a partially authenticated session.
+            if (googlePendingUser) {
+                auth.signOut().catch(() => {});
+                googlePendingUser = null;
+            }
+            hideRoleModal();
+        });
+        roleSelectButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                startRegistration(e.currentTarget.dataset.role);
+            });
+        });
+
+        // Feather icons
+        feather.replace();
+    </script>
+</body>
+</html>

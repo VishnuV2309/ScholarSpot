@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScholarSpot Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js" charset="utf-8"></script>
+    <style>
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: linear-gradient(135deg, #1e3a8a, #6d28d9, #14b8a6); /* Premium navy, amethyst, teal */
+        }
+
+        /* move modal function has been relocated into the JS module to avoid invalid CSS parsing */
+        .loader { 
+            border: 6px solid #e5e7eb; 
+            border-top: 6px solid #7c3aed; /* Amethyst */
+            border-radius: 50%; 
+            width: 60px; 
+            height: 60px; 
+            animation: spin 0.8s linear infinite; 
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        .nav-link { 
+            transition: all 0.3s ease; 
+            border-radius: 12px; 
+        }
+        .nav-link:hover { 
+            transform: translateX(5px); 
+            background: linear-gradient(to right, #7c3aed, #db2777); /* Amethyst to magenta */
+        }
+        .nav-link.active { 
+            background: linear-gradient(to right, #7c3aed, #db2777); 
+            color: white; 
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2); 
+        }
+        #sidebar { 
+            transition: transform 0.3s ease-in-out; 
+            background: linear-gradient(to bottom, #1e3a8a, #4b0082); 
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3); 
+        }
+        #profile-menu { 
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; 
+        }
+        #edit-profile-modal { 
+            transition: opacity 0.3s ease-in-out; 
+        }
+        #edit-profile-modal > div { 
+            transition: transform 0.3s ease-in-out, scale 0.3s ease-in-out; 
+        }
+        .uploadcare--widget__button_type_open { 
+            background: linear-gradient(to right, #7c3aed, #db2777) !important; 
+            color: white !important; 
+            border-radius: 9999px !important; 
+            padding: 10px 20px !important; 
+            font-weight: 700 !important; 
+            transition: transform 0.2s ease; 
+        }
+        .uploadcare--widget__button_type_open:hover { 
+            transform: scale(1.05); 
+        }
+        .card { 
+            background: linear-gradient(145deg, #ffffff, #e0e7ff); 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            transition: transform 0.3s ease, box-shadow 0.3s ease; 
+        }
+        .card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); 
+        }
+        .input-field { 
+            transition: border-color 0.3s ease, box-shadow 0.3s ease; 
+        }
+        .input-field:focus { 
+            border-color: #7c3aed; 
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2); 
+        }
+        .btn-primary { 
+            background: linear-gradient(to right, #7c3aed, #db2777); /* Amethyst to magenta */
+            transition: transform 0.2s ease, box-shadow 0.2s ease; 
+        }
+        .btn-primary:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); 
+        }
+        .search-results-card {
+            background: linear-gradient(145deg, #ffffff, #e0e7ff);
+            border: 1px solid rgba(124, 58, 237, 0.2);
+            transition: all 0.3s ease;
+        }
+        .search-results-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        .search-input {
+            background: linear-gradient(145deg, #f8fafc, #e2e8f0);
+            border: 1px solid #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .search-input:focus {
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+        }
+        .btn-view, .btn-download {
+            background: linear-gradient(to right, #1d4ed8, #3b82f6); /* Sapphire to sky blue */
+            transition: transform 0.2s ease;
+        }
+        .btn-view:hover, .btn-download:hover {
+            transform: scale(1.05);
+        }
+        @media (max-width: 640px) {
+            .search-input {
+                padding: 8px;
+            }
+            .btn-view, .btn-download {
+                padding: 6px 12px;
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Spinner & Overlays -->
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex flex-col items-center justify-center z-50">
+        <div class="loader"></div>
+        <p class="mt-4 text-white font-semibold text-lg animate-pulse">Loading  ScholarSpot dashboard...</p>
+    </div>
+    <div id="upload-overlay" class="hidden fixed inset-0 bg-gray-900 bg-opacity-70 flex flex-col items-center justify-center z-50">
+        <div class="loader"></div>
+        <p id="upload-status" class="mt-4 text-white font-semibold text-lg">Saving your content...</p>
+    </div>
+
+    <!-- Main App Layout -->
+    <div id="app-layout" class="hidden">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="text-white w-64 min-h-screen p-6 fixed lg:relative lg:translate-x-0 transform -translate-x-full z-40">
+            <div class="flex items-center justify-between mb-10">
+                <h1 class="text-3xl font-extrabold text-white">Scholar<span class="text-teal-400">Spot</span></h1>
+                <button id="sidebar-close-button" class="lg:hidden text-gray-300 hover:text-white"><i data-feather="x" class="w-6 h-6"></i></button>
+            </div>
+            <nav id="sidebar-nav"></nav>
+        </aside>
+
+        <!-- Main Content Wrapper -->
+        <div class="flex-1 flex flex-col min-h-screen">
+            <!-- Header -->
+            <header class="bg-white/90 backdrop-blur-xl shadow-lg sticky top-0 z-30">
+                <div class="max-w-full mx-auto py-4 px-6 lg:px-8 flex justify-between items-center">
+                    <button id="sidebar-open-button" class="text-gray-800 hover:text-indigo-600 focus:outline-none"><i data-feather="menu" class="w-7 h-7"></i></button>
+                    <div class="flex-1">
+                        <!-- Dashboard role badge (updated dynamically) -->
+                        <span id="dashboard-role-badge" class="inline-block ml-4 px-3 py-1 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-800 hidden">Dashboard</span>
+                    </div>
+                    <div class="relative">
+                        <button id="profile-button" class="w-12 h-12 bg-gradient-to-r from-[#7c3aed] to-[#db2777] rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md hover:shadow-lg transition-shadow"></button>
+                        <!-- Admin: toggle to view the student UI -->
+                        <button id="admin-student-toggle" title="Toggle student view" class="hidden ml-3 px-3 py-1 rounded-md bg-gray-200 text-gray-800 text-sm">View as student</button>
+                        <div id="profile-menu" class="hidden absolute right-0 mt-3 w-64 origin-top-right bg-white rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none transform opacity-0 scale-95">
+                            <div class="py-2">
+                                <div class="px-5 py-3 border-b border-gray-100"><p id="profile-menu-name" class="text-base font-bold text-gray-900"></p><p id="profile-menu-email" class="text-sm text-gray-500 truncate"></p></div>
+                                <a href="#" id="edit-profile-button" class="flex items-center px-5 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"><i data-feather="edit-2" class="mr-3 h-5 w-5"></i>Edit Profile</a>
+                                <a href="#" id="sign-out-button" class="flex items-center px-5 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"><i data-feather="log-out" class="mr-3 h-5 w-5"></i>Sign Out</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <!-- Main Dashboard Area -->
+            <main class="flex-1 p-8">
+                <div class="max-w-7xl mx-auto">
+                    <div id="tab-content"></div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="text-center py-6 text-sm text-gray-200 bg-gray-900/50 backdrop-blur-md">
+                <p>&copy; <span id="footer-year"></span> ScholarSpot | All Rights Reserved.</p>
+                <p class="mt-1">Developed by <strong class="text-teal-400"> Team-ScholarSpot </strong> | REVA University, Bengaluru</p>
+                <p class="mt-2 text-xs text-gray-300">If you encounter any issues with the website, please contact: <a href="mailto:scholarspot99@gmail.com" class="text-teal-300 hover:text-teal-100">scholarspot99@gmail.com</a></p>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="edit-profile-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-6 border w-full max-w-lg shadow-2xl rounded-2xl bg-white transform translate-y-10 card">
+            <div class="flex justify-between items-center pb-4 border-b border-gray-100">
+                <p class="text-3xl font-extrabold text-gray-900">Edit Profile</p>
+                <button id="modal-close-button" class="text-gray-500 hover:text-gray-800"><i data-feather="x" class="w-6 h-6"></i></button>
+            </div>
+            <form id="edit-profile-form" class="mt-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <input id="edit-first-name" type="text" placeholder="First Name" class="input-field w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 placeholder-gray-400">
+                    <input id="edit-last-name" type="text" placeholder="Last Name" class="input-field w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 placeholder-gray-400">
+                </div>
+                <!-- Student-only fields -->
+                <div id="edit-student-fields" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <select id="edit-branch" class="input-field w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800"><option value="" disabled>Select Branch</option><option value="CSE">CSE</option><option value="CSE(AI&DS)">CSE(AI&DS)</option><option value="CSE(IOT)">CSE(IOT)</option></select>
+                    <select id="edit-semester" class="input-field w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800"><option value="" disabled>Select Semester</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select>
+                </div>
+                <div>
+                    <input id="edit-password" type="password" placeholder="New Password (optional)" class="input-field w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 placeholder-gray-400">
+                </div>
+                <div class="flex justify-end pt-4">
+                    <button type="submit" class="btn-primary px-6 py-3 text-white text-base font-bold rounded-lg shadow-md">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase SDK and Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc, updateDoc, deleteDoc, collection, addDoc, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB9tfTneE9g87gI2N_ZUyFj5JqnbGnaW_E",
+            authDomain: "scholarspot99.firebaseapp.com",
+            projectId: "scholarspot99",
+            storageBucket: "scholarspot99.firebasestorage.app",
+            messagingSenderId: "850241158094",
+            appId: "1:850241158094:web:f35083a69458ea8021c99f",
+            measurementId: "G-X8M1BHJDQE"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const uploadOverlay = document.getElementById('upload-overlay');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const appLayout = document.getElementById('app-layout');
+        const sidebarNav = document.getElementById('sidebar-nav');
+        const tabContent = document.getElementById('tab-content');
+        const profileButton = document.getElementById('profile-button');
+        const profileMenu = document.getElementById('profile-menu');
+        const sidebar = document.getElementById('sidebar');
+        const openSidebarBtn = document.getElementById('sidebar-open-button');
+        const closeSidebarBtn = document.getElementById('sidebar-close-button');
+        const modal = document.getElementById('edit-profile-modal');
+        const modalCloseBtn = document.getElementById('modal-close-button');
+        const editProfileForm = document.getElementById('edit-profile-form');
+
+        let currentUserData = null;
+
+        const studentTabs = [
+            { href: 'notes.html', title: 'Notes', icon: 'book-open' },
+            { href: 'questions.html', title: 'Important Questions', icon: 'help-circle' },
+            { href: 'papers.html', title: 'Previous Year QPs', icon: 'file-text' },
+            { href: 'assignments.html', title: 'Assignments', icon: 'clipboard' },
+            // Students can upload content too, but it must be approved by admin before publishing
+            { id: 'upload', title: 'Upload Content', icon: 'upload-cloud' },
+            { id: 'search', title: 'Search', icon: 'search' },
+            { href: 'chat.html', title: 'Anonymous Chat', icon: 'message-square' }
+        ];
+        const professorTabs = [
+            { id: 'upload', title: 'Upload Content', icon: 'upload-cloud' },
+            { href: 'my-uploads.html', title: 'My Uploads', icon: 'list' },
+            { id: 'search', title: 'Search', icon: 'search' }
+        ];
+        const adminTabs = [
+            { id: 'moderation', title: 'Moderation', icon: 'check-circle' },
+            { id: 'search', title: 'Search', icon: 'search' }
+        ];
+
+        function initializeDashboardUI(role, userData) {
+            const tabs = role === 'admin' ? adminTabs : (role === 'student' ? studentTabs : professorTabs);
+            // Choose default active tab: for students default to 'search', otherwise the first tab with an id
+            let defaultActiveId = null;
+            if (role === 'student') {
+                defaultActiveId = 'search';
+            } else {
+                const firstTabWithId = tabs.find(t => t.id);
+                defaultActiveId = firstTabWithId ? firstTabWithId.id : (tabs[0] && tabs[0].id) || null;
+            }
+
+            sidebarNav.innerHTML = tabs.map((tab, index) => {
+                if (tab.href) {
+                    return `<a href="${tab.href}" class="nav-link flex items-center p-4 my-3 rounded-lg text-white hover:text-white"><i data-feather="${tab.icon}" class="mr-4 w-5 h-5"></i><span class="font-medium">${tab.title}</span></a>`;
+                }
+                return `<a href="#" data-tab-id="${tab.id}" class="nav-link flex items-center p-4 my-3 rounded-lg text-white hover:text-white ${tab.id === defaultActiveId ? 'active' : ''}"><i data-feather="${tab.icon}" class="mr-4 w-5 h-5"></i><span class="font-medium">${tab.title}</span></a>`;
+            }).join('');
+
+            tabContent.innerHTML = tabs.filter(t => t.id).map((tab) => `<div id="content-${tab.id}" class="${tab.id === defaultActiveId ? '' : 'hidden'}">${getTabContent(tab.id, userData)}</div>`).join('');
+            document.querySelectorAll('.nav-link[data-tab-id]').forEach(link => link.addEventListener('click', handleNavLinkClick));
+            
+            profileButton.textContent = userData.firstName.charAt(0).toUpperCase();
+            document.getElementById('profile-menu-name').textContent = `${userData.firstName} ${userData.lastName}`;
+            document.getElementById('profile-menu-email').textContent = userData.email;
+
+            // Show a clear role label so it's obvious which dashboard the user is viewing
+            const roleBadge = document.getElementById('dashboard-role-badge');
+            if (roleBadge) {
+                let label = 'User Dashboard';
+                if (role === 'admin') label = 'Admin Dashboard';
+                else if (role === 'student') label = 'Student Dashboard';
+                else if (role === 'professor' || role === 'lecturer') label = 'Lecturer Dashboard';
+                roleBadge.textContent = label;
+                roleBadge.classList.remove('hidden');
+            }
+
+            // Allow both professors and students to upload (student uploads remain pending until admin approves)
+            if (role === 'professor' || role === 'student') {
+                initializeUploadcareWidget();
+            }
+            // If admin, initialize moderation tools
+            if (role === 'admin') {
+                initializeModeration();
+            }
+
+            // Show admin 'View as student' toggle when admin
+            const adminToggle = document.getElementById('admin-student-toggle');
+            let viewAsStudent = false;
+            if (role === 'admin' && adminToggle) {
+                adminToggle.classList.remove('hidden');
+                adminToggle.addEventListener('click', () => {
+                    viewAsStudent = !viewAsStudent;
+                    adminToggle.textContent = viewAsStudent ? 'Exit student view' : 'View as student';
+                    // When viewing as student, show student tabs and hide admin-specific tabs
+                    if (viewAsStudent) {
+                        initializeDashboardUI('student', userData); // re-render as student
+                        // mark admin mode so moderation still works via right-click
+                        document.body.dataset.adminMode = 'true';
+                        document.body.dataset.viewAsStudent = 'true';
+                    } else {
+                        initializeDashboardUI('admin', userData);
+                        document.body.dataset.viewAsStudent = 'false';
+                    }
+                });
+            }
+            
+            document.getElementById('footer-year').textContent = new Date().getFullYear();
+            feather.replace();
+            // Attach handlers that rely on tab content being present (search inputs are injected into the DOM)
+            attachSearchHandlers();
+        }
+
+        function getTabContent(tabId, userData) {
+            const commonStyles = "card p-10 rounded-3xl shadow-xl border border-gray-100";
+            switch (tabId) {
+                case 'upload':
+                    return `<div class="${commonStyles}">
+                                <h3 class="text-4xl font-extrabold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-[#7c3aed] to-[#db2777]">Upload New Content</h3>
+                                <p class="mt-3 text-gray-600 text-lg">Select details for your content to share with students.</p>
+                                <div class="mt-10 space-y-8">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700">For Branch (choose one or more)</label>
+                                            <div id="upload-branch" class="grid grid-cols-2 gap-2 mt-2">
+                                                <div></div>
+                                                <label class="inline-flex items-center"><input type="checkbox" value="CSE" class="branch-checkbox" /><span class="ml-2">CSE</span></label>
+                                                <label class="inline-flex items-center"><input type="checkbox" value="CSE(AI&DS)" class="branch-checkbox" /><span class="ml-2">CSE(AI&DS)</span></label>
+                                                <label class="inline-flex items-center"><input type="checkbox" value="CSE(IOT)" class="branch-checkbox" /><span class="ml-2">CSE(IOT)</span></label>
+                                            </div>
+                                            <p class="text-xs text-gray-500 mt-1">Select one or more branches to target this content.</p>
+                                        </div>
+                                        <div>
+                                            <label for="upload-semester" class="block text-sm font-semibold text-gray-700">For Semester</label>
+                                            <select id="upload-semester" required class="input-field mt-2 block w-full rounded-lg border-gray-200 shadow-sm bg-gray-50 text-gray-800"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label for="subject-select" class="block text-sm font-semibold text-gray-700">Subject / Folder</label>
+                                            <select id="subject-select" class="input-field mt-2 block w-full rounded-lg border-gray-200 shadow-sm bg-white text-gray-800">
+                                                <option value="">-- Choose existing subject --</option>
+                                                <option value="__new__">+ Create new subject...</option>
+                                            </select>
+                                            <input id="subject-name" type="text" class="input-field mt-2 block w-full rounded-lg border-gray-200 shadow-sm bg-gray-50 text-gray-800 hidden" placeholder="Enter new subject name if creating">
+                                            <!-- Live subject list (click a chip to choose that subject) -->
+                                            <div id="subject-list" class="mt-3 flex flex-wrap gap-2 text-sm"></div>
+                                        </div>
+                                        <div>
+                                            <label for="content-type" class="block text-sm font-semibold text-gray-700">Content Type</label>
+                                            <select id="content-type" required class="input-field mt-2 block w-full rounded-lg border-gray-200 shadow-sm bg-gray-50 text-gray-800">
+                                                <option value="Notes">Notes</option>
+                                                <option value="Important Questions">Important Questions</option>
+                                                <option value="Previous Year QPs">Previous Year QPs</option>
+                                                <option value="Assignments">Assignments</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700">File (PDF, Image, PPT only)</label>
+                                            <input type="hidden" role="uploadcare-uploader" id="uploadcare-widget" class="mt-2" />
+                                        </div>
+                                        <!-- Access always set to 'all' by design. Removed radio selection UI. -->
+                                        <div class="mt-6">
+                                            <p id="selected-file-name" class="text-sm text-gray-600">No file chosen yet.</p>
+                                            <div class="mt-2">
+                                                <label for="editable-file-name" class="block text-xs text-gray-500">File name (edit if you want to change)</label>
+                                                <input id="editable-file-name" class="mt-1 px-3 py-2 w-full rounded-md border border-gray-200 bg-white text-gray-800" placeholder="Leave as default or type new file name" />
+                                            </div>
+                                            <div class="mt-3 flex gap-3">
+                                                <button id="submit-upload-button" disabled class="btn-primary px-6 py-3 text-white font-bold rounded-lg shadow-md">Upload</button>
+                                                <button id="clear-upload-button" type="button" class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Clear</button>
+                                            </div>
+                                            <p id="upload-hint" class="text-xs text-gray-500 mt-2">Choose a file using the widget above, then click Upload to save details to ScholarSpot.</p>
+                                        </div>
+                                </div>
+                            </div>`;
+                case 'search':
+                    return `<div class="${commonStyles}">
+                                <h3 class="text-4xl font-extrabold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-[#7c3aed] to-[#db2777]">Search Content</h3>
+                                <p class="mt-3 text-gray-600 text-lg">Search for PDFs, images, and PPTs across CSE branches.</p>
+                                <div class="mt-10">
+                                    <div class="flex gap-4">
+                                        <input id="search-input" type="text" placeholder="Search for files (e.g., 'algorithms PDF' or 'data structures')" class="search-input flex-1 px-4 py-3 rounded-lg text-gray-900 focus:outline-none sm:text-sm">
+                                        <button id="search-button" class="btn-primary flex items-center px-6 py-3 rounded-lg text-white font-semibold">
+                                            <i data-feather="search" class="mr-2 h-5 w-5"></i>Search
+                                        </button>
+                                    </div>
+                                    <div id="search-results" class="mt-8 space-y-4 hidden">
+                                        <p id="no-results" class="text-gray-500 text-center hidden">No results found. Try a different search term.</p>
+                                    </div>
+                                </div>
+                            </div>`;
+                    case 'moderation':
+                        return `<div class="${commonStyles}">
+                                    <h3 class="text-4xl font-extrabold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-[#7c3aed] to-[#db2777]">Pending Uploads</h3>
+                                    <p class="mt-3 text-gray-600 text-lg">Approve or reject student uploads before they are published.</p>
+                                    <div id="moderation-list" class="mt-8 space-y-4">
+                                        <p class="text-sm text-gray-500">Loading pending uploads...</p>
+                                    </div>
+                                </div>`;
+                default:
+                    return `<div class="${commonStyles}">
+                                <h3 class="text-4xl font-extrabold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-[#7c3aed] to-[#db2777]">Welcome, ${userData.firstName}!</h3>
+                                <p class="mt-3 text-gray-600 text-lg">Dive into your learning journey by selecting an option from the sidebar!</p>
+                            </div>`;
+            }
+        }
+        
+        function handleNavLinkClick(e) {
+            e.preventDefault();
+            const clickedLink = e.currentTarget;
+            const tabId = clickedLink.dataset.tabId;
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            clickedLink.classList.add('active');
+            document.querySelectorAll('#tab-content > div').forEach(panel => panel.classList.add('hidden'));
+            document.getElementById(`content-${tabId}`).classList.remove('hidden');
+            sidebar.classList.add('-translate-x-full');
+            // If user opened the search tab, ensure handlers are attached (re-bind to current DOM nodes)
+            if (tabId === 'search') {
+                attachSearchHandlers();
+            }
+        }
+
+        async function performSearch(searchTerm) {
+            // basic validation & UI reset
+            if (!searchTerm || !searchTerm.trim()) return;
+            const searchResults = document.getElementById('search-results');
+            const noResults = document.getElementById('no-results');
+            if (searchResults) { searchResults.classList.add('hidden'); searchResults.innerHTML = ''; }
+            if (noResults) noResults.classList.add('hidden');
+
+            try {
+                console.log('performSearch ->', searchTerm);
+                const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.ppt', '.pptx'];
+
+                const snapshot = await getDocs(collection(db, 'content'));
+                const qLower = searchTerm.toLowerCase();
+                const tokens = qLower.split(/\s+/).filter(Boolean);
+                const results = [];
+
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data() || {};
+                    // Skip items explicitly marked as not approved
+                    if (data.approved === false) return;
+                    // Enforce branch/semester visibility: semesters 1-2 are visible across branches; others only visible to same branch
+                    if (currentUserData) {
+                        const userSem = (currentUserData.semester || '') + '';
+                        const userBranch = (currentUserData.branch || '') + '';
+                        const itemSem = (data.semester || '') + '';
+                        const itemBranch = (data.branch || '') + '';
+                        if (userSem === '1' || userSem === '2') {
+                            if (itemSem !== userSem) return; // only same semester
+                        } else {
+                            if (itemSem !== userSem) return;
+                            if (itemBranch !== userBranch) return;
+                        }
+                    }
+                    const fileName = (data.fileName || '').toString();
+                    const subjectName = (data.subjectName || '').toString();
+                    const contentType = (data.contentType || '').toString();
+                    const uploaderName = (data.uploaderName || '').toString();
+                    // content may have `branches` (array) or `branch` (string for backward compat)
+                    const branch = Array.isArray(data.branches) ? (data.branches.join(' ') ) : (data.branch || '').toString();
+                    const semester = (data.semester || '').toString();
+                    const fileURL = data.fileURL || '';
+
+                    const searchable = `${fileName} ${subjectName} ${contentType} ${uploaderName} ${branch} ${semester}`.toLowerCase();
+                    const matchesTokens = tokens.every(t => searchable.includes(t));
+
+                    const extIndex = fileName.lastIndexOf('.');
+                    const fileExt = extIndex !== -1 ? fileName.slice(extIndex).toLowerCase() : '';
+                    const extensionAllowed = allowedExtensions.length === 0 || allowedExtensions.includes(fileExt) || fileExt === '';
+
+                    if (matchesTokens && extensionAllowed) results.push({ id: docSnap.id, fileURL, fileName, subjectName, contentType, uploaderName, uploaderRole: data.uploaderRole || '', branch, semester });
+                });
+
+                if (!searchResults) return;
+                if (results.length === 0) {
+                    if (noResults) noResults.classList.remove('hidden');
+                    searchResults.classList.add('hidden');
+                } else {
+                    const highlight = (text) => {
+                        if (!text) return '';
+                        let t = text.toString();
+                        tokens.forEach(tok => {
+                            if (!tok) return;
+                            const re = new RegExp('(' + tok.replace(/[-\\/\\^$*+?.()|[\]{}]/g, '\\$&') + ')', 'ig');
+                            t = t.replace(re, '<mark class="bg-yellow-200 py-0.5 px-0.5 rounded-sm">$1</mark>');
+                        });
+                        return t;
+                    };
+
+                    searchResults.innerHTML = results.map(result => {
+                        const subjectLabel = result.subjectName ? `<p class="text-xs text-gray-500 mt-2">Subject: ${result.subjectName}</p>` : '';
+                        const adminSubjectControls = (document.body.dataset.adminMode === 'true' && document.body.dataset.viewAsStudent === 'true' && result.subjectName) ? `
+                            <div class="mt-2 flex gap-2">
+                                <button onclick="window.renameSubject && window.renameSubject('${(result.subjectName||'').replace(/'/g, "\\'")}')" class="px-2 py-1 bg-yellow-400 text-white rounded-md text-xs">Rename Subject</button>
+                                <button onclick="window.moveSubject && window.moveSubject('${(result.subjectName||'').replace(/'/g, "\\'")}')" class="px-2 py-1 bg-teal-600 text-white rounded-md text-xs">Move Files</button>
+                                <button onclick="window.deleteSubject && window.deleteSubject('${(result.subjectName||'').replace(/'/g, "\\'")}')" class="px-2 py-1 bg-red-600 text-white rounded-md text-xs">Delete Subject</button>
+                            </div>
+                        ` : '';
+
+                        return `
+                        <div class="search-results-card p-4 rounded-lg" data-doc-id="${result.id || ''}">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-gray-900">${highlight(result.fileName || result.subjectName || 'Untitled')}</h4>
+                                    <p class="text-sm text-gray-600">${result.branch || ''} ${result.semester ? '- Sem ' + result.semester : ''} &middot; <span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-semibold">${result.contentType || ''}</span></p>
+                                    <p class="text-xs text-gray-500">Uploaded by ${highlight(result.uploaderName || 'Unknown')} ${result.uploaderRole ? '(' + result.uploaderRole + ')' : ''}</p>
+                                    ${subjectLabel}
+                                    ${adminSubjectControls}
+                                </div>
+                                <div class="flex space-x-2 ml-4">
+                                    <a href="viewer.html?note=${encodeURIComponent(result.fileURL)}" target="_blank" class="btn-view inline-flex items-center px-4 py-2 rounded-md text-white text-sm font-medium">
+                                        <i data-feather="eye" class="mr-1 h-4 w-4"></i>View
+                                    </a>
+                                    <a href="${result.fileURL}" download class="btn-download inline-flex items-center px-4 py-2 rounded-md text-white text-sm font-medium">
+                                        <i data-feather="download" class="mr-1 h-4 w-4"></i>Download
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    }).join('');
+                    searchResults.classList.remove('hidden');
+                    feather.replace();
+                }
+            } catch (err) {
+                console.error('performSearch error', err);
+                if (noResults) noResults.classList.remove('hidden');
+            }
+        }
+
+        // Attach search handlers after tab content is rendered
+        function attachSearchHandlers() {
+            const searchInput = document.getElementById('search-input');
+            const searchButton = document.getElementById('search-button');
+            const searchResults = document.getElementById('search-results');
+            const noResults = document.getElementById('no-results');
+            if (!searchButton || !searchInput) return;
+
+            // Remove previous listeners by replacing elements with clones
+            const newButton = searchButton.cloneNode(true);
+            searchButton.parentNode.replaceChild(newButton, searchButton);
+            const newInput = searchInput.cloneNode(true);
+            searchInput.parentNode.replaceChild(newInput, searchInput);
+
+            // Attach fresh handlers
+            newButton.addEventListener('click', () => {
+                // clear previous state
+                if (searchResults) searchResults.innerHTML = '';
+                if (noResults) { noResults.classList.add('hidden'); }
+                performSearch(newInput.value);
+            });
+
+            newInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (searchResults) searchResults.innerHTML = '';
+                    if (noResults) { noResults.classList.add('hidden'); }
+                    performSearch(newInput.value);
+                }
+            });
+            // Add contextmenu handling for admin moderation when results are rendered
+            document.addEventListener('contextmenu', (ev) => {
+                const target = ev.target.closest('.search-results-card, .p-3.rounded-md');
+                if (!target) return;
+                // Only allow if admin is viewing as student
+                if (document.body.dataset.adminMode !== 'true' || document.body.dataset.viewAsStudent !== 'true') return;
+                ev.preventDefault();
+                const id = target.dataset.docId || target.querySelector('[data-id]')?.dataset.id;
+                if (!id) return;
+                showAdminContextMenu(ev.pageX, ev.pageY, id);
+            });
+        }
+
+        // Simple context menu for admin actions when viewing as student
+        function showAdminContextMenu(x, y, docId) {
+            // remove any existing
+            const existing = document.getElementById('admin-context-menu'); if (existing) existing.remove();
+            const menu = document.createElement('div');
+            menu.id = 'admin-context-menu';
+            menu.style.position = 'absolute'; menu.style.left = x + 'px'; menu.style.top = y + 'px';
+            menu.style.zIndex = 2000; menu.className = 'bg-white rounded-md shadow-lg p-2';
+            menu.innerHTML = `
+                <button id="ctx-approve" class="block px-3 py-1 text-left text-sm w-full">Approve</button>
+                <button id="ctx-reject" class="block px-3 py-1 text-left text-sm w-full">Reject</button>
+                <button id="ctx-rename" class="block px-3 py-1 text-left text-sm w-full">Rename</button>
+                <button id="ctx-delete" class="block px-3 py-1 text-left text-sm w-full text-red-600">Delete</button>
+            `;
+            document.body.appendChild(menu);
+
+            const removeMenu = () => { const m = document.getElementById('admin-context-menu'); if (m) m.remove(); };
+            setTimeout(() => document.addEventListener('click', removeMenu, { once: true }));
+
+            document.getElementById('ctx-approve').addEventListener('click', async () => { try { await updateDoc(doc(db,'content',docId), { approved: true, approvalNote: 'Approved by admin (context menu)', approvedAt: new Date() }); alert('Approved'); } catch(e){console.error(e); alert('Failed'); } removeMenu(); });
+            document.getElementById('ctx-reject').addEventListener('click', async () => { const note = prompt('Rejection note'); try { await updateDoc(doc(db,'content',docId), { approved: false, approvalNote: note || 'Rejected by admin', rejectedAt: new Date() }); alert('Rejected'); } catch(e){console.error(e); alert('Failed'); } removeMenu(); });
+            document.getElementById('ctx-rename').addEventListener('click', async () => { const newName = prompt('New file name'); if (!newName) return; try { await updateDoc(doc(db,'content',docId), { fileName: newName }); alert('Renamed'); } catch(e){console.error(e); alert('Failed'); } removeMenu(); });
+            document.getElementById('ctx-delete').addEventListener('click', async () => { if (!confirm('Delete this file?')) return; try { await deleteDoc(doc(db,'content',docId)); alert('Deleted'); } catch(e){console.error(e); alert('Failed'); } removeMenu(); });
+        }
+
+        function initializeUploadcareWidget() {
+            const uploaderInput = document.getElementById('uploadcare-widget');
+            if (!uploaderInput) return;
+            
+            const UPLOADCARE_PUBLIC_KEY = "a7207f99523ca79a93d9";
+            uploaderInput.dataset.publicKey = UPLOADCARE_PUBLIC_KEY;
+            const widget = uploadcare.Widget(uploaderInput);
+
+            // Hold the uploaded file info until the professor clicks 'Upload'
+            let pendingFileInfo = null;
+            const submitUploadButton = document.getElementById('submit-upload-button');
+            const selectedFileName = document.getElementById('selected-file-name');
+            const clearUploadButton = document.getElementById('clear-upload-button');
+            const editableFileName = document.getElementById('editable-file-name');
+
+            widget.onUploadComplete((fileInfo) => {
+                // store pending file info and enable upload button
+                pendingFileInfo = fileInfo;
+                if (selectedFileName) selectedFileName.textContent = `Ready: ${fileInfo.name}`;
+                if (editableFileName) editableFileName.value = fileInfo.name;
+                if (submitUploadButton) submitUploadButton.disabled = false;
+                // Do not save to Firestore yet
+            });
+
+            // Populate subject select with existing folders
+            const subjectSelect = document.getElementById('subject-select');
+            const subjectNameInput = document.getElementById('subject-name');
+            async function refreshSubjects() {
+                try {
+                    const fRef = collection(db,'folders');
+                    onSnapshot(fRef, (snap) => {
+                        if (!subjectSelect) return;
+                        const baseOptions = Array.from(subjectSelect.options).slice(0,2);
+                        subjectSelect.innerHTML = '';
+                        baseOptions.forEach(o => subjectSelect.appendChild(o));
+                        const selectedSemester = (document.getElementById('upload-semester') || {}).value || '';
+                        const items = snap.docs.map(d => d.data()).filter(Boolean).filter(it => {
+                            // only include folders that match the selected semester
+                            if (!selectedSemester) return false;
+                            return (it.semester || '') + '' === (selectedSemester + '');
+                        });
+                        // dedupe by lowercaseName+branch (per-semester and per-branch)
+                        const map = new Map();
+                        items.forEach(it => {
+                            const name = it.name || '';
+                            const branchKey = (it.branch || '') + '';
+                            const key = (it.lowercaseName || name.toLowerCase()) + '::' + branchKey + '::' + ((it.semester||'')+ '');
+                            if (!map.has(key)) map.set(key, { name, branch: it.branch || '' });
+                        });
+                        Array.from(map.values()).sort((a,b)=> a.name.localeCompare(b.name)).forEach(obj => {
+                            const opt = document.createElement('option');
+                            opt.value = obj.name + '||' + (obj.branch || '');
+                            opt.textContent = obj.branch ? `${obj.name} — ${obj.branch}` : obj.name;
+                            subjectSelect.appendChild(opt);
+                        });
+                    });
+                } catch(err){ console.error('Failed to load subjects', err); }
+            }
+
+            // Update subject list UI (clickable chips) when folders change
+            async function refreshSubjectList() {
+                try {
+                    const subjectListEl = document.getElementById('subject-list');
+                    if (!subjectListEl) return;
+                    const fRef = collection(db,'folders');
+                    onSnapshot(fRef, (snap) => {
+                        const selectedSemester = (document.getElementById('upload-semester') || {}).value || '';
+                        const items = snap.docs.map(d => d.data()).filter(Boolean).filter(it => {
+                            if (!selectedSemester) return false;
+                            return ((it.semester || '') + '') === (selectedSemester + '');
+                        });
+                        const map = new Map();
+                        items.forEach(it => {
+                            const name = it.name || '';
+                            const branchKey = (it.branch || '') + '';
+                            const key = (it.lowercaseName || name.toLowerCase()) + '::' + branchKey + '::' + ((it.semester||'')+ '');
+                            if (!map.has(key)) map.set(key, { name, branch: it.branch || '' });
+                        });
+                        const objs = Array.from(map.values()).sort((a,b)=> a.name.localeCompare(b.name));
+                        if (objs.length === 0) {
+                            subjectListEl.innerHTML = '<p class="text-sm text-gray-500">No subjects for this semester. Create one above.</p>';
+                            return;
+                        }
+                        subjectListEl.innerHTML = objs.map(o => {
+                            const label = o.branch ? `${o.name} — ${o.branch}` : o.name;
+                            return `<button type="button" class="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full hover:bg-indigo-100 subject-chip" data-name="${o.name.replace(/"/g,'\\"')}" data-branch="${(o.branch||'').replace(/"/g,'\\"')}">${label}</button>`;
+                        }).join('');
+                        // wire chips
+                        subjectListEl.querySelectorAll('.subject-chip').forEach(btn => btn.addEventListener('click', (e) => {
+                            const val = e.currentTarget.dataset.name;
+                            const br = e.currentTarget.dataset.branch || '';
+                            if (!val) return;
+                            if (subjectSelect) {
+                                subjectSelect.value = val + '||' + br;
+                                subjectNameInput.classList.add('hidden'); subjectNameInput.required = false;
+                            }
+                        }));
+                    });
+                } catch(err){ console.error('Failed to refresh subject list', err); }
+            }
+            refreshSubjects();
+            refreshSubjectList();
+
+            // Re-filter subjects when semester changes
+            const semesterSelect = document.getElementById('upload-semester');
+            if (semesterSelect) {
+                semesterSelect.addEventListener('change', () => { refreshSubjects(); refreshSubjectList(); });
+            }
+
+            if (subjectSelect) subjectSelect.addEventListener('change', (e) => {
+                if (e.target.value === '__new__') { subjectNameInput.classList.remove('hidden'); subjectNameInput.required = true; }
+                else { subjectNameInput.classList.add('hidden'); subjectNameInput.required = false; }
+            });
+
+            // Clear pending upload
+            if (clearUploadButton) clearUploadButton.addEventListener('click', () => {
+                pendingFileInfo = null;
+                if (selectedFileName) selectedFileName.textContent = 'No file chosen yet.';
+                if (submitUploadButton) submitUploadButton.disabled = true;
+                try { widget.value(null); } catch(e){ /* ignore */ }
+            });
+
+            // On explicit Upload button click, validate fields and save the pending file info
+            if (submitUploadButton) submitUploadButton.addEventListener('click', async () => {
+                if (!pendingFileInfo) { alert('No file uploaded yet. Use the widget to choose a file first.'); return; }
+                // Collect selected branches from checkboxes
+                const branchCheckboxes = Array.from(document.querySelectorAll('#upload-branch .branch-checkbox')) || [];
+                const branches = branchCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+                const semester = document.getElementById('upload-semester').value;
+                    let subjectName = document.getElementById('subject-name').value;
+                    const chosen = subjectSelect ? subjectSelect.value : '';
+                    let explicitBranchForSubject = '';
+                    if (chosen && chosen !== '__new__') {
+                        // chosen format: "name||branch" where branch may be empty
+                        const parts = chosen.split('||');
+                        subjectName = parts[0] || subjectName;
+                        explicitBranchForSubject = parts[1] || '';
+                    }
+                    if (!subjectName) { alert('Please fill out subject (choose or create)'); return; }
+                const contentType = document.getElementById('content-type').value;
+                // Access type removed from UI; default to 'all'
+                const accessType = 'all';
+                const user = auth.currentUser;
+
+                if (!semester || !subjectName || !contentType) { alert('Please fill out all fields before uploading.'); return; }
+
+                uploadOverlay.classList.remove('hidden');
+                try {
+                    // Auto-approve uploads from professors/lecturers/admins
+                    const isAutoApprove = currentUserData && (currentUserData.role === 'professor' || currentUserData.role === 'lecturer' || currentUserData.role === 'admin');
+                    const now = new Date();
+                    const docData = {
+                        subjectName: subjectName,
+                        contentType: contentType,
+                        branches: branches,
+                        branch: branches.length ? branches[0] : '',
+                        semester: semester,
+                        fileURL: pendingFileInfo.cdnUrl,
+                        fileName: (editableFileName && editableFileName.value) ? editableFileName.value : pendingFileInfo.name,
+                        uploaderId: user.uid,
+                        uploaderName: `${currentUserData.firstName} ${currentUserData.lastName}`,
+                        uploaderRole: currentUserData.role || '',
+                        accessType: accessType,
+                        createdAt: now,
+                        // approval fields
+                        approved: isAutoApprove ? true : false,
+                        approvalNote: isAutoApprove ? 'Auto-approved (uploaded by ' + (currentUserData.role || 'trusted user') + ')' : '',
+                    };
+                    if (isAutoApprove) docData.approvedAt = now;
+
+                    // Ensure folder exists: create per-branch (or for each selected branch when Select All is used)
+                    try {
+                        const normalized = subjectName.trim();
+                        const selectedSemester = (document.getElementById('upload-semester') || {}).value || '';
+                        const branchesToEnsure = [];
+                        // If admin selected an explicit branch for subject, ensure that; otherwise use chosen branch selection from upload (branches array)
+                        if (explicitBranchForSubject) branchesToEnsure.push(explicitBranchForSubject);
+                        else if (branches.length > 0) branchesToEnsure.push(...branches);
+                        // If no branches chosen, create a subject with empty branch
+                        if (branchesToEnsure.length === 0) branchesToEnsure.push('');
+
+                        for (const br of branchesToEnsure) {
+                            const lower = normalized.toLowerCase();
+                            const branchKey = (br || '') + '';
+                            const semKey = `${lower}::${branchKey}::${selectedSemester}`;
+                            const foldersQ = query(collection(db,'folders'), where('lowercaseName','==', semKey));
+                            const foldersSnapshot = await getDocs(foldersQ);
+                            if (foldersSnapshot.empty) {
+                                await addDoc(collection(db,'folders'), { name: normalized, lowercaseName: semKey, semester: selectedSemester, branch: br || '', createdAt: new Date() });
+                            }
+                        }
+                    } catch(err){ console.error('Failed ensuring folder exists', err); }
+
+                    // Create content documents per branch so files are branch-isolated
+                    const branchesToCreate = [];
+                    if (explicitBranchForSubject) branchesToCreate.push(explicitBranchForSubject);
+                    else if (branches.length > 0) branchesToCreate.push(...branches);
+                    else branchesToCreate.push('');
+
+                    // If multiple branches selected, create a content doc for each branch
+                    for (const br of branchesToCreate) {
+                        const cData = { ...docData, branch: br || '', branches: br ? [br] : [], subjectName: subjectName, semester: semester };
+                        await addDoc(collection(db, "content"), cData);
+                    }
+
+                    if (isAutoApprove) {
+                        alert('Content uploaded and published (auto-approved).');
+                    } else {
+                        alert('Content uploaded successfully and is pending admin approval.');
+                    }
+
+                    pendingFileInfo = null;
+                    if (selectedFileName) selectedFileName.textContent = 'No file chosen yet.';
+                    if (editableFileName) editableFileName.value = '';
+                    if (submitUploadButton) submitUploadButton.disabled = true;
+                    try { widget.value(null); } catch(e){}
+                } catch (error) {
+                    console.error('Error saving to Firestore:', error);
+                    alert('File uploaded, but failed to save details.');
+                } finally {
+                    uploadOverlay.classList.add('hidden');
+                }
+            });
+        }
+
+        // Admin moderation: list pending uploads and approve/reject
+        async function initializeModeration() {
+            const modList = document.getElementById('moderation-list');
+            if (!modList) return;
+
+            // layout: Pending | All Content | Folder Manager
+            modList.innerHTML = `
+                <div id="admin-pending" class="space-y-4">
+                    <h4 class="text-lg font-bold">Pending Uploads</h4>
+                    <div id="pending-uploads" class="space-y-4"><p class="text-sm text-gray-500">Loading pending uploads...</p></div>
+                </div>
+                <div id="admin-all-content" class="mt-8">
+                    <h4 class="text-lg font-bold">All Content</h4>
+                    <div id="all-content-list" class="mt-3"><p class="text-sm text-gray-500">Loading all content...</p></div>
+                </div>
+                <div id="admin-folders" class="mt-8">
+                    <h4 class="text-lg font-bold">Folder Manager</h4>
+                    <div class="mt-3 flex gap-2 items-center">
+                        <input id="new-folder-name" class="px-3 py-2 border rounded-md w-64" placeholder="New folder name (subject)" />
+                        <button id="create-folder-btn" class="px-4 py-2 bg-indigo-600 text-white rounded-md">Create Folder</button>
+                    </div>
+                    <div id="folders-list" class="mt-4 space-y-3"><p class="text-sm text-gray-500">Loading folders...</p></div>
+                </div>
+            `;
+
+            // Move modal (hidden by default)
+            if (!document.getElementById('move-modal')) {
+                const moveModalHtml = `
+                <div id="move-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-xl p-6 w-full max-w-lg">
+                        <h3 class="text-lg font-bold mb-4">Move File to Folder</h3>
+                        <p id="move-file-name" class="text-sm text-gray-600 mb-3"></p>
+                        <div id="move-folders-list" class="space-y-2 max-h-48 overflow-auto mb-4"></div>
+                        <div class="flex justify-end gap-2">
+                            <button id="move-cancel" class="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+                            <button id="move-confirm" class="px-4 py-2 bg-teal-600 text-white rounded-md">Move</button>
+                        </div>
+                    </div>
+                </div>`;
+                document.body.insertAdjacentHTML('beforeend', moveModalHtml);
+            }
+
+            // --- Pending uploads realtime ---
+            try {
+                const qPending = query(collection(db, 'content'), where('approved', '==', false));
+                onSnapshot(qPending, (snapshot) => {
+                    const pendingContainer = document.getElementById('pending-uploads');
+                    if (!pendingContainer) return;
+                    if (snapshot.empty) {
+                        pendingContainer.innerHTML = '<p class="text-sm text-gray-500">No pending uploads.</p>';
+                        return;
+                    }
+                    pendingContainer.innerHTML = snapshot.docs.map(docSnap => {
+                        const d = docSnap.data();
+                        return `
+                            <div class="p-4 rounded-lg bg-white border border-gray-200 flex justify-between items-start">
+                                <div class="flex-1 pr-4">
+                                    <p class="font-semibold text-gray-900">${d.fileName || 'Untitled'}</p>
+                                    <p class="text-sm text-gray-600">${d.subjectName || ''} &middot; ${d.branch || ''} - Sem ${d.semester || ''}</p>
+                                    <p class="text-xs text-gray-500">Uploaded by ${d.uploaderName || 'Unknown'}${d.uploaderRole ? ' ('+d.uploaderRole+')' : ''}</p>
+                                    <p class="text-xs text-yellow-600 mt-2">Pending review</p>
+                                </div>
+                                <div class="flex flex-col items-end gap-2">
+                                    <a href="viewer.html?note=${encodeURIComponent(d.fileURL || '')}" target="_blank" class="px-3 py-2 bg-indigo-600 text-white rounded-md text-sm">View</a>
+                                    <button data-id="${docSnap.id}" class="approve-btn px-3 py-2 bg-green-600 text-white rounded-md text-sm">Approve</button>
+                                    <button data-id="${docSnap.id}" class="reject-btn px-3 py-2 bg-red-600 text-white rounded-md text-sm">Reject</button>
+                                </div>
+                            </div>`;
+                    }).join('');
+
+                    setTimeout(() => {
+                        document.querySelectorAll('.approve-btn').forEach(btn => btn.addEventListener('click', async (e) => {
+                            const id = e.currentTarget.dataset.id;
+                            if (!confirm('Approve this upload and publish it?')) return;
+                            try {
+                                await updateDoc(doc(db, 'content', id), { approved: true, approvalNote: 'Approved by admin', approvedAt: new Date() });
+                                alert('Approved');
+                            } catch (err) { console.error(err); alert('Failed to approve'); }
+                        }));
+                        document.querySelectorAll('.reject-btn').forEach(btn => btn.addEventListener('click', async (e) => {
+                            const id = e.currentTarget.dataset.id;
+                            const note = prompt('Optional rejection note (explaining reason)');
+                            if (!confirm('Reject this upload? It will be hidden from students.')) return;
+                            try {
+                                await updateDoc(doc(db, 'content', id), { approved: false, approvalNote: note || 'Rejected by admin', rejectedAt: new Date() });
+                                alert('Rejected');
+                            } catch (err) { console.error(err); alert('Failed to reject'); }
+                        }));
+                    }, 10);
+                });
+            } catch (err) {
+                console.error('Error setting pending listener', err);
+                const pendingContainer = document.getElementById('pending-uploads'); if (pendingContainer) pendingContainer.innerHTML = '<p class="text-sm text-red-500">Failed to load pending uploads.</p>';
+            }
+
+            // --- All content (admin controls) realtime ---
+            try {
+                const allContentContainer = document.getElementById('all-content-list');
+                onSnapshot(collection(db, 'content'), (snapshot) => {
+                    if (!allContentContainer) return;
+                    if (snapshot.empty) { allContentContainer.innerHTML = '<p class="text-sm text-gray-500">No content found.</p>'; return; }
+                    allContentContainer.innerHTML = snapshot.docs.map(docSnap => {
+                        const d = docSnap.data();
+                        return `
+                            <div class="p-3 rounded-md bg-white border border-gray-100 flex justify-between items-center">
+                                <div>
+                                    <p class="font-semibold">${d.fileName || 'Untitled'}</p>
+                                    <p class="text-xs text-gray-500">${d.subjectName || ''} ${d.branch ? '· ' + d.branch : ''} ${d.semester ? '- Sem ' + d.semester : ''}</p>
+                                    <p class="text-xs text-gray-400">Uploaded by ${d.uploaderName || 'Unknown'}${d.uploaderRole ? ' ('+d.uploaderRole+')' : ''}</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <a href="viewer.html?note=${encodeURIComponent(d.fileURL || '')}" target="_blank" class="px-2 py-1 bg-indigo-600 text-white rounded-md text-xs">View</a>
+                                    <button data-id="${docSnap.id}" class="admin-approve px-2 py-1 bg-green-600 text-white rounded-md text-xs">Approve</button>
+                                    <button data-id="${docSnap.id}" class="admin-reject px-2 py-1 bg-yellow-500 text-white rounded-md text-xs">Reject</button>
+                                    <button data-id="${docSnap.id}" data-filename="${(d.fileName||'').replace(/"/g,'\"')}" class="admin-rename px-2 py-1 bg-blue-600 text-white rounded-md text-xs">Rename</button>
+                                    <button data-id="${docSnap.id}" class="admin-move px-2 py-1 bg-teal-600 text-white rounded-md text-xs">Move</button>
+                                    <button data-id="${docSnap.id}" class="admin-delete px-2 py-1 bg-red-600 text-white rounded-md text-xs">Delete</button>
+                                </div>
+                            </div>`;
+                    }).join('');
+
+                    setTimeout(() => {
+                        document.querySelectorAll('.admin-approve').forEach(btn => btn.addEventListener('click', async (e) => {
+                            const id = e.currentTarget.dataset.id; if (!confirm('Approve this file?')) return;
+                            try { await updateDoc(doc(db,'content',id), { approved: true, approvalNote: 'Approved by admin', approvedAt: new Date() }); alert('Approved'); } catch(err){console.error(err); alert('Failed');}
+                        }));
+                        document.querySelectorAll('.admin-reject').forEach(btn => btn.addEventListener('click', async (e) => {
+                            const id = e.currentTarget.dataset.id; const note = prompt('Optional rejection note'); if (!confirm('Reject this file?')) return;
+                            try { await updateDoc(doc(db,'content',id), { approved: false, approvalNote: note || 'Rejected by admin', rejectedAt: new Date() }); alert('Rejected'); } catch(err){console.error(err); alert('Failed');}
+                        }));
+                        document.querySelectorAll('.admin-rename').forEach(btn => btn.addEventListener('click', async (e) => {
+                            const id = e.currentTarget.dataset.id; const currentName = e.currentTarget.dataset.filename || ''; const newName = prompt('New file name', currentName); if (!newName) return;
+                            try { await updateDoc(doc(db,'content',id), { fileName: newName }); alert('Renamed'); } catch(err){console.error(err); alert('Failed to rename');}
+                        }));
+                        document.querySelectorAll('.admin-move').forEach(btn => btn.addEventListener('click', async (e) => {
+                            const id = e.currentTarget.dataset.id;
+                            showMoveModal(id);
+                        }));
+                        document.querySelectorAll('.admin-delete').forEach(btn => btn.addEventListener('click', async (e) => {
+                            const id = e.currentTarget.dataset.id; if (!confirm('Delete this file permanently?')) return;
+                            try { await deleteDoc(doc(db,'content',id)); alert('Deleted'); } catch(err){console.error(err); alert('Failed to delete');}
+                        }));
+                    }, 10);
+                });
+            } catch (err) { console.error('Error initializing all-content listener', err); const allContentContainer = document.getElementById('all-content-list'); if (allContentContainer) allContentContainer.innerHTML = '<p class="text-sm text-red-500">Failed to load content.</p>'; }
+
+            // --- Folders manager ---
+            try {
+                const foldersRef = collection(db, 'folders');
+                const foldersList = document.getElementById('folders-list');
+                const newFolderInput = document.getElementById('new-folder-name');
+                const createBtn = document.getElementById('create-folder-btn');
+
+                // Create folder
+                createBtn.addEventListener('click', async () => {
+                    const name = (newFolderInput.value || '').trim(); if (!name) { alert('Enter a folder name'); return; }
+                    try { await addDoc(foldersRef, { name, createdAt: new Date() }); newFolderInput.value = ''; alert('Folder created'); } catch(err){console.error(err); alert('Failed to create folder'); }
+                });
+
+                // Watch folders
+                onSnapshot(foldersRef, async (snapshot) => {
+                    if (!foldersList) return;
+                    if (snapshot.empty) { foldersList.innerHTML = '<p class="text-sm text-gray-500">No folders yet.</p>'; return; }
+                    foldersList.innerHTML = snapshot.docs.map(docSnap => {
+                        const f = docSnap.data();
+                        return `
+                            <div class="flex items-center justify-between p-3 bg-white border rounded-md">
+                                <div>
+                                    <p class="font-medium">${f.name}</p>
+                                    <p class="text-xs text-gray-400">Created: ${f.createdAt ? new Date(f.createdAt.seconds ? f.createdAt.seconds*1000 : f.createdAt).toLocaleString() : ''}</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button data-id="${docSnap.id}" data-name="${(f.name||'').replace(/"/g,'\"')}" class="rename-folder px-2 py-1 bg-blue-600 text-white rounded-md text-xs">Rename</button>
+                                    <button data-id="${docSnap.id}" data-name="${(f.name||'').replace(/"/g,'\"')}" class="delete-folder px-2 py-1 bg-red-600 text-white rounded-md text-xs">Delete</button>
+                                </div>
+                            </div>`;
+                    }).join('');
+
+                    setTimeout(() => {
+                        document.querySelectorAll('.rename-folder').forEach(btn => btn.addEventListener('click', async (e) => {
+                            const id = e.currentTarget.dataset.id; const current = e.currentTarget.dataset.name || ''; const newName = prompt('New folder name', current); if (!newName) return;
+                            try { await updateDoc(doc(db,'folders',id), { name: newName }); alert('Folder renamed'); } catch(err){console.error(err); alert('Failed to rename folder'); }
+                        }));
+
+                        document.querySelectorAll('.delete-folder').forEach(btn => btn.addEventListener('click', async (e) => {
+                            const id = e.currentTarget.dataset.id; const name = e.currentTarget.dataset.name || ''; if (!confirm(`Delete folder "${name}" and ALL files inside? This cannot be undone.`)) return;
+                            try {
+                                // Offer to move files before deletion
+                                const filesSnapshot = await getDocs(query(collection(db,'content'), where('subjectName','==', name)));
+                                if (!filesSnapshot.empty) {
+                                    const moveChoice = confirm(`${filesSnapshot.size} files found. Click OK to move them to another folder before deleting, or Cancel to delete all files with the folder.`);
+                                    if (moveChoice) {
+                                        // prompt for target folder name
+                                        const target = prompt('Enter target folder name to move files into');
+                                        if (target) {
+                                            for (const fdoc of filesSnapshot.docs) {
+                                                try { await updateDoc(doc(db,'content', fdoc.id), { subjectName: target }); } catch(err){ console.error('Failed to move file', fdoc.id, err); }
+                                            }
+                                        }
+                                    } else {
+                                        for (const fdoc of filesSnapshot.docs) {
+                                            try { await deleteDoc(doc(db,'content', fdoc.id)); } catch(err){ console.error('Failed to delete file', fdoc.id, err); }
+                                        }
+                                    }
+                                }
+                                // Delete folder record
+                                await deleteDoc(doc(db,'folders', id));
+                                alert('Folder deleted');
+                            } catch(err){ console.error(err); alert('Failed to delete folder'); }
+                        }));
+                    }, 10);
+                });
+            } catch (err) { console.error('Error initializing folders manager', err); const foldersList = document.getElementById('folders-list'); if (foldersList) foldersList.innerHTML = '<p class="text-sm text-red-500">Failed to load folders.</p>'; }
+        }
+
+        // Branch selection: use explicit branch checkboxes only (Select All removed)
+
+        // Show move modal for a given content doc id
+        async function showMoveModal(contentDocId) {
+            const modal = document.getElementById('move-modal');
+            const fileNameEl = document.getElementById('move-file-name');
+            const foldersListEl = document.getElementById('move-folders-list');
+            const moveConfirm = document.getElementById('move-confirm');
+            const moveCancel = document.getElementById('move-cancel');
+            if (!modal || !foldersListEl) return;
+
+            // load file name
+            try {
+                const snap = await getDoc(doc(db,'content',contentDocId));
+                const data = snap.exists() ? snap.data() : null;
+                if (fileNameEl) fileNameEl.textContent = data ? (data.fileName || 'Untitled') : 'Unknown file';
+            } catch(err){ console.error('Failed to fetch file', err); if (fileNameEl) fileNameEl.textContent = 'Unknown file'; }
+
+            // load folders
+            if (foldersListEl) foldersListEl.innerHTML = '<p class="text-sm text-gray-500">Loading folders...</p>';
+            try {
+                const fSnap = await getDocs(collection(db,'folders'));
+                if (fSnap.empty) { if (foldersListEl) foldersListEl.innerHTML = '<p class="text-sm text-gray-500">No folders available. Create one first.</p>'; }
+                else {
+                    if (foldersListEl) foldersListEl.innerHTML = fSnap.docs.map(d => `<label class="block"><input type="radio" name="move-target" value="${(d.data().name).replace(/"/g,'\"')}" class="mr-2"> ${d.data().name}</label>`).join('');
+                }
+            } catch(err){ console.error('Failed to load folders', err); if (foldersListEl) foldersListEl.innerHTML = '<p class="text-sm text-red-500">Failed to load folders.</p>'; }
+
+            modal.classList.remove('hidden');
+
+            const cleanup = () => { modal.classList.add('hidden'); if (moveConfirm) moveConfirm.onclick = null; if (moveCancel) moveCancel.onclick = null; };
+            if (moveCancel) moveCancel.onclick = cleanup;
+            if (moveConfirm) moveConfirm.onclick = async () => {
+                const selected = document.querySelector('input[name="move-target"]:checked');
+                if (!selected) { alert('Select a target folder'); return; }
+                const targetName = selected.value;
+                try {
+                    await updateDoc(doc(db,'content', contentDocId), { subjectName: targetName });
+                    alert('File moved');
+                    cleanup();
+                } catch(err){ console.error(err); alert('Failed to move file'); }
+            };
+        }
+        
+        // Subject management helpers (available when admin toggles View as student)
+        async function renameSubject(oldName) {
+            const newName = prompt(`Rename subject "${oldName}" to:`)?.trim();
+            if (!newName) return;
+            try {
+                const foldersQ = query(collection(db,'folders'), where('lowercaseName','==', oldName.trim().toLowerCase()));
+                const snap = await getDocs(foldersQ);
+                if (snap.empty) { alert('Folder not found'); return; }
+                const folderDoc = snap.docs[0];
+                await updateDoc(folderDoc.ref, { name: newName, lowercaseName: newName.trim().toLowerCase() });
+                // update content docs
+                const contentQ = query(collection(db,'content'), where('subjectName','==', oldName));
+                const cSnap = await getDocs(contentQ);
+                for (const c of cSnap.docs) { await updateDoc(c.ref, { subjectName: newName }); }
+                alert(`Renamed subject to "${newName}" and updated ${cSnap.size} item(s).`);
+            } catch(err){ console.error(err); alert('Failed to rename subject'); }
+        }
+
+        async function deleteSubject(name) {
+            const mode = prompt(`Type DELETE to permanently delete all files in "${name}" and the subject, or type MOVE to move files to another subject. Type CANCEL to abort.`)?.trim()?.toUpperCase();
+            if (!mode || mode === 'CANCEL') return;
+            try {
+                const foldersQ = query(collection(db,'folders'), where('lowercaseName','==', name.trim().toLowerCase()));
+                const snap = await getDocs(foldersQ);
+                if (snap.empty) { alert('Folder not found'); return; }
+                const folderDoc = snap.docs[0];
+                const contentQ = query(collection(db,'content'), where('subjectName','==', name));
+                const cSnap = await getDocs(contentQ);
+                if (mode === 'DELETE') {
+                    for (const c of cSnap.docs) { await deleteDoc(c.ref); }
+                    await deleteDoc(folderDoc.ref);
+                    alert(`Deleted subject "${name}" and ${cSnap.size} file(s).`);
+                    return;
+                }
+                if (mode === 'MOVE') {
+                    const allFolders = await getDocs(collection(db,'folders'));
+                    const available = allFolders.docs.map(d => d.data().name).filter(n => n && n !== name);
+                    if (available.length === 0) { alert('No other subjects to move into'); return; }
+                    const target = prompt(`Move files into which subject? Available: ${available.join(', ')}`)?.trim();
+                    if (!target || !available.includes(target)) { alert('Invalid target'); return; }
+                    for (const c of cSnap.docs) { await updateDoc(c.ref, { subjectName: target }); }
+                    await deleteDoc(folderDoc.ref);
+                    alert(`Moved ${cSnap.size} file(s) to "${target}" and deleted subject "${name}".`);
+                    return;
+                }
+            } catch(err){ console.error(err); alert('Failed to delete/move subject'); }
+        }
+
+        async function moveSubject(name) {
+            // Move all files from this subject to another subject (helper for admin)
+            try {
+                const allFolders = await getDocs(collection(db,'folders'));
+                const available = allFolders.docs.map(d => d.data().name).filter(n => n && n !== name);
+                if (available.length === 0) { alert('No other subjects to move into'); return; }
+                const target = prompt(`Move files from "${name}" into which subject? Available: ${available.join(', ')}`)?.trim();
+                if (!target || !available.includes(target)) { alert('Invalid target'); return; }
+                const contentQ = query(collection(db,'content'), where('subjectName','==', name));
+                const cSnap = await getDocs(contentQ);
+                for (const c of cSnap.docs) { await updateDoc(c.ref, { subjectName: target }); }
+                alert(`Moved ${cSnap.size} file(s) from "${name}" to "${target}".`);
+            } catch(err){ console.error(err); alert('Failed to move subject files'); }
+        }
+
+        // Expose these helpers to window so inline onclicks call them
+        window.renameSubject = renameSubject;
+        window.deleteSubject = deleteSubject;
+        window.moveSubject = moveSubject;
+        
+        function toggleSidebar() { 
+            sidebar.classList.toggle('-translate-x-full'); 
+        }
+        function toggleProfileMenu() { 
+            if (profileMenu.classList.contains('hidden')) { 
+                profileMenu.classList.remove('hidden'); 
+                setTimeout(() => profileMenu.classList.remove('opacity-0', 'scale-95'), 10); 
+            } else { 
+                profileMenu.classList.add('opacity-0', 'scale-95'); 
+                setTimeout(() => profileMenu.classList.add('hidden'), 200); 
+            } 
+        }
+        
+        function openEditProfileModal() {
+            if (!currentUserData) return;
+            document.getElementById('edit-first-name').value = currentUserData.firstName;
+            document.getElementById('edit-last-name').value = currentUserData.lastName;
+            document.getElementById('edit-password').value = '';
+            
+            const studentFields = document.getElementById('edit-student-fields');
+            if (currentUserData.role === 'student') {
+                studentFields.style.display = 'grid';
+                document.getElementById('edit-branch').required = true;
+                document.getElementById('edit-semester').required = true;
+                document.getElementById('edit-branch').value = currentUserData.branch;
+                document.getElementById('edit-semester').value = currentUserData.semester;
+            } else {
+                studentFields.style.display = 'none';
+                document.getElementById('edit-branch').required = false;
+                document.getElementById('edit-semester').required = false;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeEditProfileModal() { 
+            modal.classList.add('hidden'); 
+        }
+
+        async function handleProfileUpdate(e) {
+            e.preventDefault();
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            const updatedData = {
+                firstName: document.getElementById('edit-first-name').value,
+                lastName: document.getElementById('edit-last-name').value,
+            };
+
+            if (currentUserData.role === 'student') {
+                updatedData.branch = document.getElementById('edit-branch').value;
+                updatedData.semester = document.getElementById('edit-semester').value;
+            }
+
+            const newPassword = document.getElementById('edit-password').value;
+            try {
+                const userDocRef = doc(db, "users", user.uid);
+                await updateDoc(userDocRef, updatedData);
+                if (newPassword) {
+                    await updatePassword(user, newPassword);
+                }
+                alert("Profile updated successfully!");
+                closeEditProfileModal();
+                window.location.reload();
+            } catch (error) {
+                console.error("Error updating profile:", error);
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        async function handleSignOut() { 
+            try { 
+                await signOut(auth); 
+                window.location.href = 'index.html'; 
+            } catch (error) { 
+                console.error("Sign out error:", error); 
+            } 
+        }
+
+        onAuthStateChanged(auth, async (user) => { 
+            if (user) { 
+                const userDocRef = doc(db, "users", user.uid); 
+                const userDocSnap = await getDoc(userDocRef); 
+                if (userDocSnap.exists()) { 
+                    currentUserData = userDocSnap.data(); 
+                    initializeDashboardUI(currentUserData.role, currentUserData); 
+                    appLayout.classList.remove('hidden'); 
+                    appLayout.classList.add('flex'); 
+                    loadingOverlay.classList.add('hidden'); 
+                    feather.replace(); 
+                } else { 
+                    handleSignOut(); 
+                } 
+            } else { 
+                window.location.href = 'index.html'; 
+            } 
+        });
+
+        // Search handlers are attached by `attachSearchHandlers()` after the dashboard UI is rendered
+
+        openSidebarBtn.addEventListener('click', toggleSidebar); 
+        closeSidebarBtn.addEventListener('click', toggleSidebar); 
+        profileButton.addEventListener('click', toggleProfileMenu);
+        window.addEventListener('click', (e) => { 
+            if (!profileButton.contains(e.target) && !profileMenu.contains(e.target)) { 
+                if (!profileMenu.classList.contains('hidden')) { 
+                    toggleProfileMenu(); 
+                } 
+            } 
+        });
+        document.getElementById('edit-profile-button').addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            openEditProfileModal(); 
+            toggleProfileMenu(); 
+        });
+        modalCloseBtn.addEventListener('click', closeEditProfileModal); 
+        editProfileForm.addEventListener('submit', handleProfileUpdate);
+        document.getElementById('sign-out-button').addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            handleSignOut(); 
+        });
+    </script>
+</body>
+</html>

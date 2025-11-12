@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignments - ScholarSpot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: linear-gradient(135deg, #1e3a8a, #6d28d9, #14b8a6); /* Navy, amethyst, teal */
+        }
+        .loader { 
+            border: 6px solid #e5e7eb; 
+            border-top: 6px solid #7c3aed; /* Amethyst spinner */
+            border-radius: 50%; 
+            width: 60px; 
+            height: 60px; 
+            animation: spin 0.8s linear infinite; 
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        .tab-button { 
+            transition: all 0.3s ease; 
+            border-radius: 12px; 
+            background: linear-gradient(145deg, #ffffff, #e0e7ff); 
+        }
+        .tab-button.active { 
+            background: linear-gradient(to right, #7c3aed, #db2777); /* Amethyst to magenta */
+            color: white; 
+            border-color: transparent; 
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2); 
+            transform: translateY(-2px); 
+        }
+        .tab-button:hover { 
+            background: linear-gradient(to right, #a78bfa, #f472b6); 
+            color: white; 
+            transform: translateY(-1px); 
+        }
+        .folder-card { 
+            background: linear-gradient(145deg, #ffffff, #e0e7ff); 
+            border: 2px solid #e2e8f0; 
+            transition: all 0.3s ease; 
+            position: relative; 
+            overflow: hidden; 
+        }
+        .folder-card::before { 
+            content: ''; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            height: 4px; 
+            background: linear-gradient(to right, #7c3aed, #db2777); /* Amethyst to magenta */
+        }
+        .folder-card:hover { 
+            transform: translateY(-8px) scale(1.02); 
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); 
+            border-color: #7c3aed; 
+        }
+        .btn-primary { 
+            background: linear-gradient(to right, #1d4ed8, #3b82f6); /* Sapphire to sky blue */
+            transition: transform 0.2s ease, box-shadow 0.2s ease; 
+        }
+        .btn-primary:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); 
+        }
+        .folder-icon { 
+            transition: transform 0.3s ease, color 0.3s ease; 
+        }
+        .folder-icon:hover { 
+            transform: scale(1.2) rotate(5deg); 
+            color: #db2777; /* Magenta on hover */
+        }
+        .assignment-item { 
+            background: linear-gradient(135deg, #f8fafc, #e8f5e8); 
+            border-left: 4px solid #14b8a6; /* Teal accent */
+            transition: all 0.3s ease; 
+        }
+        .assignment-item:hover { 
+            border-left-color: #0d9488; /* Darker teal */
+            transform: translateX(5px); 
+        }
+        @media (max-width: 640px) {
+            .tab-button {
+                padding: 8px 12px;
+                font-size: 0.875rem;
+            }
+            
+            .folder-card {
+                padding: 16px;
+            }
+            .assignment-item {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Content -->
+    <div id="main-content" class="hidden">
+        <!-- Header -->
+        <header class="bg-white/90 backdrop-blur-xl shadow-lg sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto py-5 px-6 lg:px-8 flex justify-between items-center">
+                <div class="flex items-center">
+                    <i data-feather="clipboard" class="w-8 h-8 text-purple-600 mr-3"></i>
+                    <h1 class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-[#7c3aed] to-[#db2777]">Assignments</h1>
+                </div>
+                <a href="dashboard.html" class="btn-primary inline-flex items-center px-6 py-3 rounded-xl text-white font-semibold text-sm shadow-lg">
+                    <i data-feather="arrow-left" class="mr-3 h-5 w-5"></i> Back to Dashboard
+                </a>
+            </div>
+        </header>
+        <!-- Main Area -->
+        <main class="max-w-7xl mx-auto py-8 px-6 lg:px-8 w-full">
+            <div id="content-container">
+                <div class="loader mx-auto"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Firebase SDK and Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, query, where, onSnapshot, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+              apiKey: "AIzaSyB9tfTneE9g87gI2N_ZUyFj5JqnbGnaW_E",
+              authDomain: "scholarspot99.firebaseapp.com",
+              projectId: "scholarspot99",
+              storageBucket: "scholarspot99.firebasestorage.app",
+              messagingSenderId: "850241158094",
+              appId: "1:850241158094:web:f35083a69458ea8021c99f",
+              measurementId: "G-X8M1BHJDQE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const mainContent = document.getElementById('main-content');
+        const contentContainer = document.getElementById('content-container');
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists()) {
+                    mainContent.classList.remove('hidden');
+                    feather.replace();
+                    loadContent(userDocSnap.data());
+                } else {
+                    window.location.href = 'index.html';
+                }
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        async function loadContent(userData) {
+            const CONTENT_TYPE = "Assignments";
+            // Pull subjects from folders collection scoped to user's semester and branch
+            const foldersRef = collection(db, 'folders');
+            let foldersQuery;
+            if (userData.semester === '1' || userData.semester === 1 || userData.semester === '2' || userData.semester === 2) {
+                // show all branches but only same semester
+                foldersQuery = query(foldersRef, where('semester', '==', userData.semester + ''));
+            } else {
+                foldersQuery = query(foldersRef, where('semester', '==', userData.semester + ''), where('branch', '==', userData.branch || ''));
+            }
+            const foldersSnap = await getDocs(foldersQuery);
+            const subjects = foldersSnap.docs.map(d => d.data().name).filter(Boolean).sort();
+
+            // Admin helpers: rename or delete a folder and update/move related content docs
+            async function renameFolder(oldName) {
+                const newName = prompt(`Rename folder "${oldName}" to:`)?.trim();
+                if (!newName) return;
+                // find folder doc
+                const q = query(foldersRef, where('lowercaseName', '==', oldName.trim().toLowerCase()));
+                const snap = await getDocs(q);
+                if (snap.empty) {
+                    alert('Folder document not found.');
+                    return;
+                }
+                const folderDoc = snap.docs[0];
+                await updateDoc(folderDoc.ref, { name: newName, lowercaseName: newName.trim().toLowerCase() });
+
+                // update all content docs that reference the old subject name
+                const contentQ = query(collection(db, 'content'), where('subjectName', '==', oldName));
+                const contentSnap = await getDocs(contentQ);
+                for (const c of contentSnap.docs) {
+                    await updateDoc(c.ref, { subjectName: newName });
+                }
+                alert(`Folder renamed to "${newName}" and ${contentSnap.size} item(s) updated.`);
+            }
+
+            async function deleteFolder(folderName) {
+                const confirmMode = prompt(`Type DELETE to permanently delete all files in "${folderName}" and the folder itself, or type MOVE to move files to another folder. Type CANCEL to abort.`)?.trim()?.toUpperCase();
+                if (!confirmMode || confirmMode === 'CANCEL') return;
+
+                // find folder doc
+                const q = query(foldersRef, where('lowercaseName', '==', folderName.trim().toLowerCase()));
+                const snap = await getDocs(q);
+                if (snap.empty) {
+                    alert('Folder document not found.');
+                    return;
+                }
+                const folderDoc = snap.docs[0];
+
+                const contentQ = query(collection(db, 'content'), where('subjectName', '==', folderName));
+                const contentSnap = await getDocs(contentQ);
+
+                if (confirmMode === 'DELETE') {
+                    // delete content docs
+                    for (const c of contentSnap.docs) {
+                        await deleteDoc(c.ref);
+                    }
+                    // delete folder doc
+                    await deleteDoc(folderDoc.ref);
+                    alert(`Folder "${folderName}" and its ${contentSnap.size} item(s) were deleted.`);
+                    return;
+                }
+
+                if (confirmMode === 'MOVE') {
+                    // present available target folders
+                    const allFoldersSnap = await getDocs(foldersRef);
+                    const available = allFoldersSnap.docs.map(d => d.data().name).filter(n => n && n !== folderName);
+                    if (available.length === 0) {
+                        alert('No other folders exist to move items into. Create a folder first.');
+                        return;
+                    }
+                    const target = prompt(`Move all items from "${folderName}" into which folder? Available: ${available.join(', ')}`)?.trim();
+                    if (!target || !available.includes(target)) {
+                        alert('Invalid target folder selected. Aborting.');
+                        return;
+                    }
+                    for (const c of contentSnap.docs) {
+                        await updateDoc(c.ref, { subjectName: target });
+                    }
+                    // delete the folder doc
+                    await deleteDoc(folderDoc.ref);
+                    alert(`Moved ${contentSnap.size} item(s) to "${target}" and deleted folder "${folderName}".`);
+                    return;
+                }
+            }
+
+            // expose handlers to the window so inline onclicks inside the generated HTML can call them
+            window.renameFolderHandler = renameFolder;
+            window.deleteFolderHandler = deleteFolder;
+
+            if (subjects.length === 0) {
+                contentContainer.innerHTML = `
+                    <div class="text-center py-16">
+                        <i data-feather="clipboard" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+                        <p class="text-gray-200 text-xl font-medium mb-2">No assignments found for your course yet.</p>
+                        <p class="text-gray-400">Check back later or explore other study materials!</p>
+                    </div>`;
+                feather.replace();
+                return;
+            }
+
+            let tabsHTML = `
+                <div class="mb-8">
+                    <div class="bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-lg">
+                        <nav class="flex space-x-3 overflow-x-auto" aria-label="Subject Tabs">
+                            ${subjects.map((sub, index) => `
+                                <button data-subject="${sub}" class="tab-button whitespace-nowrap py-3 px-6 font-semibold text-sm text-gray-700 ${index === 0 ? 'active' : ''}">
+                                    <i data-feather="book" class="w-4 h-4 mr-2 inline"></i>
+                                    ${sub}
+                                </button>
+                            `).join('')}
+                        </nav>
+                    </div>
+                </div>`;
+
+            let foldersHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    ${subjects.map((sub, index) => {
+                        const filesForSubject = [];
+                        // Query top-level content collection for documents matching this subject and content type, scoped to branch/semester
+                        let contentQ;
+                        if (userData.semester === '1' || userData.semester === 1 || userData.semester === '2' || userData.semester === 2) {
+                            contentQ = query(collection(db, 'content'), where('subjectName', '==', sub), where('contentType','==', CONTENT_TYPE), where('semester', '==', userData.semester + ''));
+                        } else {
+                            contentQ = query(collection(db, 'content'), where('subjectName', '==', sub), where('contentType','==', CONTENT_TYPE), where('semester','==', userData.semester + ''), where('branch','==', userData.branch || ''));
+                        }
+                        onSnapshot(contentQ, (snapshot) => {
+                            const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).filter(f => f.approved !== false);
+                            updateFolderContent(sub, docs, index);
+                        });
+                        return `<div id="folder-${sub.replace(/\s+/g, '-')}" class="folder-card rounded-2xl p-6 ${index === 0 ? '' : 'hidden'}"></div>`;
+                    }).join('')}
+                </div>`;
+
+            contentContainer.innerHTML = tabsHTML + foldersHTML;
+            feather.replace();
+
+            function updateFolderContent(subject, filesForSubject, index) {
+                const folderElement = document.getElementById(`folder-${subject.replace(/\s+/g, '-')}`);
+                folderElement.innerHTML = `
+                    <div class="flex items-center mb-6">
+                        <div class="folder-icon w-10 h-10 text-blue-600 mr-4">
+                            <i data-feather="folder"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#1d4ed8] to-[#3b82f6]">${subject}</h2>
+                            <p class="text-sm text-gray-500">${filesForSubject.length} assignment${filesForSubject.length !== 1 ? 's' : ''} available</p>
+                        </div>
+                        ${userData && userData.role === 'admin' ? `
+                        <div class="ml-auto flex gap-2">
+                            <button onclick="(async ()=>{ const win = window; await win.renameFolderHandler && win.renameFolderHandler('${subject.replace(/'/g, "\\'")}') })()" class="inline-flex items-center px-3 py-2 bg-yellow-400 text-white rounded-md text-sm"><i data-feather="edit-2" class="w-4 h-4 mr-2"></i>Rename</button>
+                            <button onclick="(async ()=>{ const win = window; await win.deleteFolderHandler && win.deleteFolderHandler('${subject.replace(/'/g, "\\'")}') })()" class="inline-flex items-center px-3 py-2 bg-red-500 text-white rounded-md text-sm"><i data-feather="trash-2" class="w-4 h-4 mr-2"></i>Delete</button>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="space-y-3">
+                        ${filesForSubject.slice(0, 5).map(file => `
+                            <div class="assignment-item block p-4 rounded-lg border border-gray-200 hover:border-teal-300 transition-all duration-300">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-semibold text-gray-900 truncate" title="${file.fileName}">${file.fileName}</p>
+                                        <p class="text-xs text-gray-500 mt-1">By ${file.uploaderName}${file.uploaderRole ? ' ('+file.uploaderRole+')' : ''}</p>
+                                    </div>
+                                    <div class="ml-3 flex gap-2">
+                                        <a href="viewer.html?note=${encodeURIComponent(file.fileURL)}" target="_blank" class="inline-flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md text-sm"><i data-feather="eye" class="w-4 h-4 mr-2"></i>View</a>
+                                        <a href="${file.fileURL}" class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-md text-sm" download target="_blank"><i data-feather="download" class="w-4 h-4 mr-2"></i>Download</a>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                        ${filesForSubject.length > 5 ? `
+                            <div class="text-center py-3">
+                                <a href="#" class="text-teal-600 hover:text-teal-800 font-medium text-sm">View all ${filesForSubject.length} assignments</a>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                feather.replace();
+            }
+
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const subject = e.currentTarget.dataset.subject;
+                    document.querySelectorAll('.tab-button').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    e.currentTarget.classList.add('active');
+                    document.querySelectorAll('[id^="folder-"]').forEach(folder => {
+                        folder.classList.add('hidden');
+                    });
+                    document.getElementById(`folder-${subject.replace(/\s+/g, '-')}`).classList.remove('hidden');
+                });
+            });
+
+            document.querySelectorAll('a[href="#"]').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    alert('Feature coming soon! All assignments will be displayed here.');
+                });
+            });
+        }
+    </script>
+</body>
+</html>

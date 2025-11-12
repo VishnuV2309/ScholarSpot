@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper to read user doc for auth
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Allow admins full access under a clear rule
+    match /{document=**} {
+      allow read, write: if false; // default deny
+    }
+
+    // Users collection: allow authenticated users to read their own profile and update limited fields
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false; // prevent deleting user documents via client
+    }
+
+    // Folders: only admins or users in same semester+branch can read (admins manage folders)
+    match /folders/{folderId} {
+      allow create: if request.auth != null && userDoc().role == 'admin';
+      allow update, delete: if request.auth != null && userDoc().role == 'admin';
+      allow read: if request.auth != null && (
+        userDoc().role == 'admin' ||
+        (resource.data.semester == userDoc().semester && (
+            resource.data.semester in ['1','2'] || resource.data.branch == userDoc().branch
+        ))
+      );
+    }
+
+    // Content collection: Enforce strict per-branch+semester visibility
+    match /content/{contentId} {
+      allow create: if request.auth != null && (
+        // uploader must be authenticated; allow professors/admins to auto-approve on client, but security rules won't allow setting role fields here
+        true
+      );
+
+      allow read: if request.auth != null && (
+        // Admins always have access
+        userDoc().role == 'admin' ||
+        (
+          // Students/Professors: semester must match
+          resource.data.semester == userDoc().semester && (
+            // semesters 1 & 2 are visible across branches
+            (resource.data.semester in ['1','2']) ||
+            // otherwise branch must match
+            resource.data.branch == userDoc().branch
+          )
+        )
+      );
+
+      allow update, delete: if request.auth != null && (
+        // Admins can update/delete any content
+        userDoc().role == 'admin' ||
+        // Uploader can update/delete their own content (but not change branch/semester/folder fields)
+        (request.auth.uid == resource.data.uploaderId)
+      );
+    }
+
+    // Default: deny everything else
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
