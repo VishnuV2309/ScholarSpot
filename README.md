@@ -3,6 +3,7 @@
 A modern, cloud-based platform designed to connect **students, professors, and administrators** — enabling seamless collaboration, resource sharing, and communication within academic institutions.
 
 🌐 **Live Demo:** [https://ssprototype.web.app/](https://ssprototype.web.app/)
+
 💻 **GitHub Repository:** [https://github.com/VishnuV2309/ScholarSpot](https://github.com/VishnuV2309/ScholarSpot)
 
 ---
@@ -38,6 +39,7 @@ However, users can still **visit and explore the live website** to experience th
 ## 🖥️ Live Demo
 
 🎯 **Production Site:** [https://ssprototype.web.app/](https://ssprototype.web.app/)
+
 💻 **GitHub Repository:** [https://github.com/VishnuV2309/ScholarSpot](https://github.com/VishnuV2309/ScholarSpot)
 
 ---
