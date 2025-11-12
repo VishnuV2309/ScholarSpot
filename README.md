@@ -217,7 +217,8 @@ For queries or collaboration, reach out:
 
 ---
 
-**Developed with dedication by Team Mind_Mesh | REVA University, Bangalore**
+**Developed with dedication by 
+## Team Mind_Mesh | REVA University, Bangalore
 📍 *Empowering digital learning through innovation and collaboration.*
 
 ---
