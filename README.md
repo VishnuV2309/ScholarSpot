@@ -19,7 +19,7 @@ A modern, cloud-based platform designed to connect **students, professors, and a
 | Developer | **Vishnu V**  | [vishnuv2309@gmail.com](mailto:vishnuv2309@gmail.com)               |
 | Developer | **Amrutha D** | [amruthadandigimath@gmail.com](mailto:amruthadandigimath@gmail.com) |
 
----## 👥 Team Details
+---
 
 
 ## 🚀 Overview
